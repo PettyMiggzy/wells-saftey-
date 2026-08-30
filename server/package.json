@@ -1,0 +1,11 @@
+{
+  "name": "wellssafety-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Wells Safety dispatch API — no dependencies, node:sqlite only",
+  "engines": { "node": ">=22.5" },
+  "scripts": {
+    "start": "node src/index.js"
+  }
+}

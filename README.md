@@ -120,6 +120,26 @@ next step is a hosted database behind Vercel, which needs an account and a small
 amount of backend work. The data model is a straight JSON document, so it ports
 over cleanly.
 
+## The dispatch server
+
+`server/` holds an optional Node service that lifts the tools out of a single
+browser: books that sync across devices, driver reports that file themselves
+with their photos, per-person logins, and private invoice links for customers.
+No npm dependencies — `node:sqlite` and `node:http` only — and one container
+serves both the site and the API.
+
+`docker compose up -d --build`, then front it with TLS. Full deploy notes,
+the API table, the plan tiers and the security posture are in
+[`server/README.md`](server/README.md).
+
+**The static copy on Vercel keeps working untouched.** Every API call is
+optional: if `/api/health` does not answer, the cloud panel hides itself and
+everything runs on browser storage exactly as before.
+
+Features above the free tier are gated **server-side** — a locked call answers
+`402` with the plan that unlocks it, which is what the upgrade panel renders.
+Hiding a button is not gating; the server is the one saying no.
+
 ## Crew tools
 
 Both private pages sit behind a shared passcode (default **104Paul**, changeable

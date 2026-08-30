@@ -1,10 +1,14 @@
 /* ==========================================================================
    Wells Safety — driver job report.
 
-   Runs on the driver's own phone, which has no connection to the office's
-   Dispatch Book. So this does not "submit" anywhere: it builds a report plus
-   compressed photos and hands them to the phone's own share sheet, which the
-   driver sends by text or email. Dispatch imports the JSON on the other end.
+   Two ways home, picked at runtime:
+
+   - Served from the dispatch server and signed in — the report and its photos
+     POST straight to /api/reports and appear in the office's Reports tab.
+   - Anywhere else (the static copy, or no login) — there is nothing to submit
+     to, so it builds the report plus compressed photos and hands them to the
+     phone's own share sheet. The driver texts or emails them, and dispatch
+     imports the JSON on the other end.
    ========================================================================== */
 
 (function () {
@@ -281,6 +285,32 @@
 
     $("#send-share").addEventListener("click", function () {
       if (!validate()) return;
+
+      // Signed in to the dispatch server: file it directly, photos and all.
+      if (WS_API.state.available && WS_API.state.me && WS_API.can("reports")) {
+        var r = reportObject();
+        var btn = $("#send-share");
+        btn.disabled = true;
+        btn.textContent = "Sending\u2026";
+        WS_API.postReport(r, photos.map(function (p) { return p.dataUrl; }))
+          .then(function (out) {
+            try { localStorage.setItem("wellssafety.driver.name", r.driver); } catch (e) {}
+            $("#send-note").textContent = out.duplicate
+              ? "Dispatch already had this one."
+              : "Filed with dispatch \u2014 " + out.photosStored + " photo(s) uploaded." +
+                (out.photosSkipped ? " " + out.photosSkipped + " would not fit." : "");
+            btn.textContent = "Sent \u2713";
+            toast("Filed with dispatch. Nothing else to do.");
+          })
+          .catch(function (err) {
+            btn.disabled = false;
+            btn.textContent = "Send to dispatch";
+            if (err.status === 402) return;   // upgrade panel already shown
+            toast("Could not reach dispatch — use Save and send it manually.");
+          });
+        return;
+      }
+
       var bundle = files();
       try { localStorage.setItem("wellssafety.driver.name", bundle.report.driver); } catch (e) {}
 
@@ -320,8 +350,12 @@
     showStep(1);
   }
 
-  WS_AUTH.require({
-    title: "Driver Sign-In",
-    subtitle: "Enter the crew passcode to file a job report."
+  // The API is optional: on the static copy there is no server, and the form
+  // falls back to the phone's share sheet exactly as before.
+  WS_API.init().then(function () {
+    return WS_AUTH.require({
+      title: "Driver Sign-In",
+      subtitle: "Enter the crew passcode to file a job report."
+    });
   }).then(start);
 })();

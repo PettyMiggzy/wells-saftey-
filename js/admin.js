@@ -231,8 +231,8 @@
     if (name === "invoices") renderInvoices();
     if (name === "clients") renderClients();
     if (name === "drivers") renderDrivers();
-    if (name === "reports") renderReports();
-    if (name === "settings") renderSettings();
+    if (name === "reports") { renderReports(); pullReports(); }
+    if (name === "settings") { renderSettings(); renderCloud(); }
   }
 
   /* --------------------------------------------------------- dashboard -- */
@@ -934,6 +934,177 @@
     showView("dashboard");
   }
 
+
+  /* --------------------------------------------------------------- cloud -- */
+
+  var cloud = { version: 0, syncing: false };
+
+  var FEATURE_ROWS = [
+    { key: "sync",     title: "Books on every device" },
+    { key: "reports",  title: "Reports file themselves" },
+    { key: "accounts", title: "A login for each driver" },
+    { key: "portal",   title: "Invoice links for customers" }
+  ];
+
+  function renderCloud() {
+    var body = $("#cloud-body"), sub = $("#cloud-sub");
+
+    if (!WS_API.state.available) {
+      sub.textContent = "Running on this browser only — no server is attached to this copy.";
+      body.innerHTML = '<div class="cloud-in"><p class="sync-line">' +
+        "Everything works exactly as it does now. Point this at the dispatch server " +
+        "and the extras below switch on." + "</p>" + upgradeGrid(null) + "</div>";
+      return;
+    }
+
+    var me = WS_API.state.me;
+    if (!me) {
+      sub.textContent = "A dispatch server is available. Sign in to sync.";
+      body.innerHTML =
+        '<div class="cloud-in"><div class="cloud-login">' +
+          '<label class="fld"><span>Email</span><input class="ad-input" id="cl-email" type="email" autocomplete="username"></label>' +
+          '<label class="fld"><span>Password</span><input class="ad-input" id="cl-pass" type="password" autocomplete="current-password"></label>' +
+          '<button class="btn btn--primary btn--sm" id="cl-login">Sign in</button>' +
+        "</div>" + upgradeGrid(null) + "</div>";
+      $("#cl-login").addEventListener("click", doLogin);
+      $("#cl-pass").addEventListener("keydown", function (e) { if (e.key === "Enter") doLogin(); });
+      return;
+    }
+
+    sub.textContent = "Signed in. Your book syncs to the server.";
+    body.innerHTML =
+      '<div class="cloud-in">' +
+        '<div class="cloud-who"><div><strong>' + esc(me.name) + "</strong> " +
+          '<span>' + esc(me.email) + " &middot; " + esc(me.role) + "</span></div>" +
+          '<span class="plan-tag">' + esc(me.plan.name) + "</span>" +
+          '<span class="ad-toolbar__spacer"></span>' +
+          '<button class="btn btn--dark btn--sm" id="cl-pull">Pull from server</button>' +
+          '<button class="btn btn--primary btn--sm" id="cl-push">Push to server</button>' +
+          '<button class="btn btn--ghost-dark btn--sm" id="cl-out">Sign out</button>' +
+        "</div>" +
+        '<p class="sync-line" id="cl-status">Last sync: not yet this session.</p>' +
+        upgradeGrid(me) +
+      "</div>";
+
+    $("#cl-out").addEventListener("click", function () {
+      WS_API.logout().then(function () { renderCloud(); toast("Signed out."); });
+    });
+    $("#cl-push").addEventListener("click", pushBook);
+    $("#cl-pull").addEventListener("click", pullBook);
+  }
+
+  function upgradeGrid(me) {
+    var copy = WS_API.state.featureCopy || {};
+    return '<div class="up-grid">' + FEATURE_ROWS.map(function (f) {
+      var on = me && me.plan.features.indexOf(f.key) !== -1;
+      var c = copy[f.key] || {};
+      var need = c.need ? c.need.charAt(0).toUpperCase() + c.need.slice(1) : "Pro";
+      return '<div class="up-card ' + (on ? "up-card--on" : "up-card--locked") + '">' +
+        "<h4>" + (on ? "&#10003; " : "&#128274; ") + esc(f.title) + "</h4>" +
+        "<p>" + esc(c.pitch || "") + "</p>" +
+        '<span class="need">' + (on ? "Included in " + esc(me.plan.name) : "Needs " + esc(need)) + "</span>" +
+        "</div>";
+    }).join("") + "</div>";
+  }
+
+  function doLogin() {
+    var email = $("#cl-email").value.trim(), pass = $("#cl-pass").value;
+    if (!email || !pass) { toast("Email and password, please."); return; }
+    WS_API.login(email, pass).then(function () {
+      renderCloud();
+      toast("Signed in. Pull the book down to get started.");
+    }).catch(function (err) {
+      toast(err.status === 429 ? "Too many tries — wait 15 minutes."
+                               : "That email and password did not match.");
+    });
+  }
+
+  // The whole book is one document, so a push is a straight replace guarded by
+  // a version number. A conflict means another device wrote first.
+  function pushBook() {
+    if (cloud.syncing) return;
+    cloud.syncing = true;
+    $("#cl-status").textContent = "Pushing…";
+    WS_API.putBook({
+      settings: state.settings, clients: state.clients,
+      drivers: state.drivers, invoices: state.invoices
+    }, cloud.version).then(function (d) {
+      cloud.version = d.version;
+      $("#cl-status").textContent = "Pushed at " + new Date().toLocaleTimeString() +
+        " (version " + d.version + ").";
+      toast("Book pushed to the server.");
+    }).catch(function (err) {
+      if (err.status === 409) {
+        cloud.version = err.payload.currentVersion;
+        $("#cl-status").textContent =
+          "Another device wrote first (now at version " + err.payload.currentVersion +
+          "). Pull, check it, then push again.";
+        toast("Someone else saved first — pull before pushing.");
+      } else if (err.status !== 402) {
+        toast("Push failed: " + err.message);
+      }
+    }).finally(function () { cloud.syncing = false; });
+  }
+
+  function pullBook() {
+    if (cloud.syncing) return;
+    cloud.syncing = true;
+    $("#cl-status").textContent = "Pulling…";
+    WS_API.getBook().then(function (d) {
+      if (!d.doc) {
+        $("#cl-status").textContent = "Nothing on the server yet — push to seed it.";
+        return;
+      }
+      if (!confirm("Replace what is in this browser with the server copy?\n\n" +
+                   "Server version " + d.version + ", saved by " + (d.updatedBy || "someone") + ".")) {
+        $("#cl-status").textContent = "Pull cancelled.";
+        return;
+      }
+      state.settings = Object.assign(state.settings, d.doc.settings || {});
+      state.clients = d.doc.clients || [];
+      state.drivers = d.doc.drivers || [];
+      state.invoices = d.doc.invoices || [];
+      cloud.version = d.version;
+      save();
+      showView("dashboard");
+      toast("Book pulled from the server.");
+    }).catch(function (err) {
+      if (err.status !== 402) toast("Pull failed: " + err.message);
+    }).finally(function () { cloud.syncing = false; });
+  }
+
+  // Reports filed straight to the server, merged in beside any imported by file.
+  // Boot and the Reports tab can both ask at once, so a second call while one
+  // is in flight joins the first rather than racing it — two concurrent merges
+  // would each see an empty list and append the same reports twice.
+  var reportPull = null;
+
+  function pullReports() {
+    if (!WS_API.can("reports")) return Promise.resolve(0);
+    if (reportPull) return reportPull;
+
+    reportPull = WS_API.listReports().then(function (d) {
+      var byId = {};
+      state.reports.forEach(function (r) { byId[r.id] = r; });
+      var added = 0;
+      (d.reports || []).forEach(function (r) {
+        if (byId[r.id]) return;
+        r.fromServer = true;
+        byId[r.id] = r;
+        state.reports.push(r);
+        added++;
+      });
+      if (added) { save(); renderReports(); }
+      return added;
+    }).catch(function () {
+      return 0;
+    }).finally(function () {
+      reportPull = null;
+    });
+
+    return reportPull;
+  }
+
   /* ------------------------------------------------------------- wiring -- */
 
   $$(".ad-tab").forEach(function (t) {
@@ -1217,5 +1388,9 @@
     subtitle: "Enter the passcode to open the books."
   }).then(function () {
     showView("dashboard");
+    // Optional: only does anything when served from the dispatch server.
+    WS_API.init().then(function () {
+      if (WS_API.state.available) pullReports();
+    });
   });
 })();

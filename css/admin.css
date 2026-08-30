@@ -711,3 +711,121 @@
     color: #555;
   }
 }
+
+/* ============================================================== cloud === */
+
+.cloud-in {
+  padding: 0 1.25rem 1.25rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.cloud-who {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1rem;
+  background: #fbfcfd;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+
+.cloud-who strong { font-size: 0.98rem; }
+.cloud-who span { color: var(--muted); font-size: 0.86rem; }
+
+.plan-tag {
+  background: var(--asphalt);
+  color: var(--amber);
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cloud-login {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem;
+  align-items: end;
+}
+
+/* Locked features, shown rather than hidden — the point is that he can see
+   what he is not getting. */
+.up-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.up-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.95rem 1rem;
+  display: grid;
+  gap: 0.35rem;
+  position: relative;
+  background: #fff;
+}
+
+.up-card--locked {
+  background:
+    repeating-linear-gradient(135deg, #fbfcfd 0 10px, #f5f7f9 10px 20px);
+  border-style: dashed;
+}
+
+.up-card h4 {
+  margin: 0;
+  font: 700 0.98rem/1.2 var(--sans);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.up-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.up-card .need {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--amber-dark);
+}
+
+.up-card--on { border-color: #bfe6ce; background: #f5fcf8; }
+.up-card--on .need { color: var(--ok); }
+
+.up-pitch { margin: 0; font-size: 0.98rem; line-height: 1.6; }
+
+.up-plan {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--amber);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1rem;
+}
+
+.up-plan strong { display: block; font-size: 1.05rem; }
+.up-plan span { font-size: 0.86rem; color: var(--muted); }
+
+.up-price {
+  margin-left: auto;
+  font: 700 1.3rem/1 var(--head);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.sync-line {
+  font-size: 0.84rem;
+  color: var(--muted);
+}

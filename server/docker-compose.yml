@@ -1,0 +1,24 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    container_name: wellssafety
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"     # front this with nginx/Caddy for TLS
+    volumes:
+      - wellssafety-data:/data    # database + uploaded photos live here
+    environment:
+      # Owner is created on first boot only, then these are ignored.
+      OWNER_EMAIL: ${OWNER_EMAIL:-paul@wellssafety.com}
+      OWNER_PASSWORD: ${OWNER_PASSWORD:?set OWNER_PASSWORD in .env}
+      OWNER_NAME: ${OWNER_NAME:-Paul Wells}
+      ACCOUNT_NAME: ${ACCOUNT_NAME:-Wells Safety LLC}
+      ACCOUNT_PLAN: ${ACCOUNT_PLAN:-starter}
+      MAX_BODY_MB: ${MAX_BODY_MB:-25}
+      # Only for plain-http testing on a LAN. Never set this in production.
+      # INSECURE_COOKIES: "1"
+
+volumes:
+  wellssafety-data:

@@ -21,8 +21,8 @@ window.WS_AUTH = (function () {
   var HASH_KEY = "wellssafety.gate.hash";
   var SESSION_KEY = "wellssafety.gate.ok";
 
-  // SHA-256 of "wellssafety::104Paul". Change the passcode in Settings and
-  // this is replaced by the hash of the new one.
+  // Hash of the passcode the crew was given. Changing it in Settings replaces
+  // this with the hash of the new one, stored per browser.
   var DEFAULT_HASH =
     "7081399126e5cf373a16160ca01d9ea337470184a7a03a3e971eab18be2963de";
 

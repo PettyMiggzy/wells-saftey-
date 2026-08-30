@@ -13,10 +13,12 @@ COPY server/src ./src
 
 # --- the site, served from the same origin as the API so the session cookie
 #     stays first-party and CORS never enters the picture ---
-COPY index.html services.html coverage.html about.html contact.html ./site/
-COPY admin.html driver.html robots.txt sitemap.xml ./site/
-COPY css  ./site/css
-COPY js   ./site/js
+# Glob rather than a list: naming pages individually meant every new page had
+# to be remembered here, and faq/reviews/guide/404 were already missing.
+COPY *.html ./site/
+COPY robots.txt sitemap.xml ./site/
+COPY css    ./site/css
+COPY js     ./site/js
 COPY assets ./site/assets
 
 ENV NODE_ENV=production \

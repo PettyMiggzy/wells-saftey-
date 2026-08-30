@@ -101,6 +101,25 @@ CREATE TABLE IF NOT EXISTS trials (
   PRIMARY KEY (account_id, feature)
 );
 
+-- Customer reviews. Submitted by the public, held until someone approves
+-- them, so the site never shows whatever a stranger typed.
+CREATE TABLE IF NOT EXISTS reviews (
+  id          TEXT PRIMARY KEY,
+  account_id  TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  author      TEXT NOT NULL,
+  company     TEXT,
+  role        TEXT,
+  rating      INTEGER NOT NULL,
+  body        TEXT NOT NULL,
+  load_ref    TEXT,
+  status      TEXT NOT NULL DEFAULT 'pending',   -- pending | approved | rejected
+  created_at  TEXT NOT NULL,
+  decided_at  TEXT,
+  ip_hash     TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(account_id, status, created_at DESC);
+
 CREATE INDEX IF NOT EXISTS idx_reports_account ON reports(account_id, filed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_photos_report ON photos(report_id, idx);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);

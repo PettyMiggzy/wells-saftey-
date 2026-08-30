@@ -166,6 +166,12 @@ window.WS_API = (function () {
     share: function (invoice, client, settings) {
       return req("/api/share", { method: "POST", body: { invoice: invoice, client: client, settings: settings } });
     },
-    shareStats: function () { return req("/api/share"); }
+    shareStats: function () { return req("/api/share"); },
+
+    listReviews: function () { return req("/api/reviews/all"); },
+    decideReview: function (id, status) {
+      return req("/api/reviews/" + id, { method: "PATCH", body: { status: status } });
+    },
+    deleteReview: function (id) { return req("/api/reviews/" + id, { method: "DELETE" }); }
   };
 })();

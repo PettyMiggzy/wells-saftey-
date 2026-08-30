@@ -34,6 +34,7 @@
       <button class="ad-tab" data-view="clients">Clients</button>
       <button class="ad-tab" data-view="drivers">Drivers</button>
       <button class="ad-tab" data-view="reports">Reports</button>
+      <button class="ad-tab" data-view="reviews">Reviews <span class="tab-badge" id="rv-badge" hidden>0</span></button>
       <button class="ad-tab" data-view="settings">Settings</button>
     </nav>
 
@@ -247,6 +248,32 @@
       </div>
       <p class="ad-empty" id="rp-empty" hidden>
         Nothing filed yet. Send your drivers the form link from the Drivers tab.
+      </p>
+    </div>
+  </section>
+
+  <!-- ======================================================= reviews === -->
+  <section class="ad-view" id="view-reviews" hidden>
+    <div class="ad-card">
+      <div class="ad-card__head">
+        <h2>Customer reviews</h2>
+        <p>
+          Left by customers on the public reviews page. Nothing shows on the
+          site until you approve it &mdash; so read it first.
+        </p>
+      </div>
+      <div class="ad-tablewrap">
+        <table class="ad-table">
+          <thead>
+            <tr><th>Received</th><th>From</th><th class="num">Rating</th>
+                <th>Review</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="rvm-body"></tbody>
+        </table>
+      </div>
+      <p class="ad-empty" id="rvm-empty" hidden>
+        No reviews yet. Send customers to the reviews page after a good move &mdash;
+        that is when they are most likely to write one.
       </p>
     </div>
   </section>

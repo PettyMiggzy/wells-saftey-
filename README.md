@@ -37,6 +37,7 @@ company and it can be added.
 | `coverage.html` | All 48 states, certification states, multi-state routes |
 | `about.html` | Ownership story, credentials, equipment list |
 | `faq.html` | Twelve common questions with FAQPage schema |
+| `reviews.html` | Customer reviews, read from the server, plus a submit form |
 | `contact.html` | Quote request form and dispatch details |
 | `404.html` | Not-found page that routes people back |
 
@@ -59,6 +60,18 @@ company and it can be added.
   bridge strike. The permit is named as the authority throughout.
 - **Sitemap** — all six public pages with `lastmod`, `changefreq` and priority.
   The admin, driver and guide pages are `noindex` and disallowed.
+
+### Reviews and search stars
+
+The reviews page collects and shows real customer reviews, moderated. It is
+worth having — social proof converts — but be clear on one thing: **it will not
+put star ratings in Google results.** Google's rich-result policy excludes
+"self-serving" reviews, meaning reviews about a business collected on that
+business's own site. Stars in search come from the **Google Business Profile**,
+which is free and is the single highest-return thing left on this list.
+
+Use both: the profile for search stars, this page for people already on the
+site.
 
 ### The biggest remaining opportunity
 

@@ -232,6 +232,7 @@
     if (name === "clients") renderClients();
     if (name === "drivers") renderDrivers();
     if (name === "reports") { renderReports(); pullReports(); }
+    if (name === "reviews") renderReviewMod();
     if (name === "settings") { renderSettings(); renderCloud(); }
   }
 
@@ -1131,6 +1132,59 @@
     return reportPull;
   }
 
+
+  /* ------------------------------------------------------------- reviews -- */
+
+  function renderReviewMod() {
+    var body = $("#rvm-body"), empty = $("#rvm-empty");
+
+    if (!WS_API.state.available || !WS_API.state.me) {
+      body.innerHTML = "";
+      empty.hidden = false;
+      empty.textContent = "Reviews live on the dispatch server. Sign in under " +
+        "Settings to read and approve them.";
+      return;
+    }
+
+    WS_API.listReviews().then(function (d) {
+      var list = d.reviews || [];
+      empty.hidden = list.length > 0;
+      if (!list.length) {
+        empty.textContent = "No reviews yet. Send customers to the reviews page " +
+          "after a good move — that is when they are most likely to write one.";
+      }
+
+      var badge = $("#rv-badge");
+      badge.hidden = !d.pending;
+      badge.textContent = d.pending;
+
+      body.innerHTML = list.map(function (r) {
+        var who = [r.company, r.role].filter(Boolean).join(" · ");
+        var cls = r.status === "approved" ? "paid"
+                : r.status === "rejected" ? "overdue" : "unpaid";
+        var actions = r.status === "approved"
+          ? '<button class="btn btn--ghost-dark btn--sm" data-rv="' + esc(r.id) + '" data-to="pending">Unpublish</button>'
+          : '<button class="btn btn--primary btn--sm" data-rv="' + esc(r.id) + '" data-to="approved">Publish</button>' +
+            ' <button class="btn btn--ghost-dark btn--sm" data-rv="' + esc(r.id) + '" data-to="rejected">Reject</button>';
+        return "<tr>" +
+          "<td>" + fmtDate(String(r.created_at || "").slice(0, 10)) + "</td>" +
+          "<td>" + esc(r.author) + (who ? '<div class="muted">' + esc(who) + "</div>" : "") +
+            (r.load_ref ? '<div class="muted">Load ' + esc(r.load_ref) + "</div>" : "") + "</td>" +
+          '<td class="num rvm-stars">' + "\u2605".repeat(Math.max(0, Math.min(5, r.rating))) + "</td>" +
+          '<td class="rvm-body">' + esc(r.body) + "</td>" +
+          '<td><span class="pill pill--' + cls + '">' + esc(r.status) + "</span></td>" +
+          '<td class="num">' + actions +
+            ' <button class="icon-btn" data-rv-del="' + esc(r.id) + '" aria-label="Delete review">&times;</button></td>' +
+          "</tr>";
+      }).join("");
+    }).catch(function (err) {
+      if (err.status === 402) return;
+      body.innerHTML = "";
+      empty.hidden = false;
+      empty.textContent = "Could not load reviews from the server.";
+    });
+  }
+
   /* ------------------------------------------------------------- wiring -- */
 
   $$(".ad-tab").forEach(function (t) {
@@ -1314,6 +1368,27 @@
     e.target.value = "";
   });
 
+  // Moderation actions.
+  document.addEventListener("click", function (e) {
+    var pub = e.target.closest("[data-rv]");
+    if (pub) {
+      WS_API.decideReview(pub.dataset.rv, pub.dataset.to).then(function () {
+        toast(pub.dataset.to === "approved" ? "Published to the reviews page."
+              : pub.dataset.to === "rejected" ? "Rejected — it stays hidden."
+              : "Unpublished.");
+        renderReviewMod();
+      }).catch(function () { toast("Could not update that review."); });
+      return;
+    }
+    var del = e.target.closest("[data-rv-del]");
+    if (del && confirm("Delete this review for good?")) {
+      WS_API.deleteReview(del.dataset.rvDel).then(function () {
+        toast("Review deleted.");
+        renderReviewMod();
+      }).catch(function () { toast("Could not delete that review."); });
+    }
+  });
+
   $("#report-to-invoice").addEventListener("click", function () {
     if (viewingReport) invoiceFromReport(viewingReport);
   });
@@ -1416,7 +1491,7 @@
     showView("dashboard");
     // Optional: only does anything when served from the dispatch server.
     WS_API.init().then(function () {
-      if (WS_API.state.available) pullReports();
+      if (WS_API.state.available) { pullReports(); if (WS_API.state.me) renderReviewMod(); }
     });
   });
 })();

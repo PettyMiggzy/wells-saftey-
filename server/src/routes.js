@@ -2,7 +2,7 @@
    Wells Safety API — routes.
    ========================================================================== */
 
-import { randomUUID, randomBytes } from "node:crypto";
+import { randomUUID, randomBytes, createHash } from "node:crypto";
 import { writeFile, mkdir, readFile, rm } from "node:fs/promises";
 import { join, resolve, sep } from "node:path";
 
@@ -324,6 +324,124 @@ function markReportInvoiced(req, user, id, body, res) {
   json(res, 200, { ok: true });
 }
 
+
+/* ------------------------------------------------------------ reviews --- */
+
+/* Submissions come from the open internet, so: length caps, no links (the
+   single most common spam payload), a honeypot, and a per-IP rate limit.
+   Nothing is shown publicly until somebody approves it. */
+
+const reviewHits = new Map();
+const REVIEW_WINDOW = 60 * 60 * 1000;
+const REVIEW_MAX = 3;
+
+function reviewThrottled(key) {
+  const rec = reviewHits.get(key);
+  if (!rec) return false;
+  if (Date.now() - rec.first > REVIEW_WINDOW) { reviewHits.delete(key); return false; }
+  return rec.count >= REVIEW_MAX;
+}
+
+function noteReview(key) {
+  const rec = reviewHits.get(key);
+  if (!rec || Date.now() - rec.first > REVIEW_WINDOW) {
+    reviewHits.set(key, { first: Date.now(), count: 1 });
+  } else rec.count++;
+}
+
+function onlyAccountId() {
+  // Single-tenant box: reviews land on the one account that exists.
+  const row = db.prepare("SELECT id FROM accounts ORDER BY created_at LIMIT 1").get();
+  return row ? row.id : null;
+}
+
+async function postReview(req, res) {
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "";
+  const key = String(ip).split(",")[0].trim();
+  if (reviewThrottled(key)) return json(res, 429, { error: "too_many_reviews" });
+
+  const b = await readJson(req);
+  if (b.website) return json(res, 200, { ok: true });          // honeypot: pretend
+
+  const author = String(b.author || "").trim().slice(0, 80);
+  const body = String(b.body || "").trim().slice(0, 1200);
+  const rating = Math.round(Number(b.rating));
+
+  if (!author || author.length < 2) return json(res, 400, { error: "name_required" });
+  if (!body || body.length < 20) return json(res, 400, { error: "review_too_short", min: 20 });
+  if (!(rating >= 1 && rating <= 5)) return json(res, 400, { error: "rating_required" });
+  if (/https?:\/\/|www\.|<[a-z]/i.test(body + author)) {
+    return json(res, 400, { error: "no_links" });
+  }
+
+  const accountId = onlyAccountId();
+  if (!accountId) return json(res, 503, { error: "not_configured" });
+
+  noteReview(key);
+  const id = randomUUID();
+  db.prepare(`INSERT INTO reviews (id, account_id, author, company, role, rating,
+                                   body, load_ref, status, created_at, ip_hash)
+              VALUES (?,?,?,?,?,?,?,?,'pending',?,?)`)
+    .run(id, accountId, author,
+         String(b.company || "").trim().slice(0, 100),
+         String(b.role || "").trim().slice(0, 80),
+         rating, body,
+         String(b.loadRef || "").trim().slice(0, 60),
+         now(),
+         createHash("sha256").update(key + "wellssafety").digest("hex").slice(0, 32));
+
+  json(res, 201, { ok: true, id, pending: true });
+}
+
+/* Public: approved reviews only, newest first. */
+function listPublicReviews(res) {
+  const accountId = onlyAccountId();
+  if (!accountId) return json(res, 200, { reviews: [], count: 0, average: null });
+
+  const rows = db.prepare(`SELECT id, author, company, role, rating, body, load_ref, decided_at
+                           FROM reviews WHERE account_id = ? AND status = 'approved'
+                           ORDER BY decided_at DESC LIMIT 100`).all(accountId);
+  const avg = rows.length
+    ? Math.round((rows.reduce((s, r) => s + r.rating, 0) / rows.length) * 10) / 10
+    : null;
+  json(res, 200, { reviews: rows, count: rows.length, average: avg });
+}
+
+/* Moderation. */
+function listAllReviews(user, res) {
+  const rows = db.prepare(`SELECT * FROM reviews WHERE account_id = ?
+                           ORDER BY CASE status WHEN 'pending' THEN 0 ELSE 1 END,
+                                    created_at DESC LIMIT 500`).all(user.account_id);
+  json(res, 200, {
+    reviews: rows,
+    pending: rows.filter((r) => r.status === "pending").length
+  });
+}
+
+async function decideReview(req, user, id, res) {
+  if (!requireRole(user, ["owner", "dispatch"], res)) return;
+  const { status } = await readJson(req);
+  if (!["approved", "rejected", "pending"].includes(status)) {
+    return json(res, 400, { error: "bad_status" });
+  }
+  const owned = db.prepare("SELECT 1 FROM reviews WHERE id = ? AND account_id = ?")
+    .get(id, user.account_id);
+  if (!owned) return json(res, 404, { error: "no_such_review" });
+
+  db.prepare("UPDATE reviews SET status = ?, decided_at = ? WHERE id = ?")
+    .run(status, now(), id);
+  json(res, 200, { ok: true });
+}
+
+function deleteReview(user, id, res) {
+  if (!requireRole(user, ["owner"], res)) return;
+  const owned = db.prepare("SELECT 1 FROM reviews WHERE id = ? AND account_id = ?")
+    .get(id, user.account_id);
+  if (!owned) return json(res, 404, { error: "no_such_review" });
+  db.prepare("DELETE FROM reviews WHERE id = ?").run(id);
+  json(res, 200, { ok: true });
+}
+
 /* -------------------------------------------------------------- users --- */
 
 async function createTeamUser(req, user, res) {
@@ -506,6 +624,10 @@ export async function route(req, res, url) {
 
   if (p === "/api/health") return json(res, 200, { ok: true, time: now() });
 
+  // Public review endpoints — no session, deliberately.
+  if (p === "/api/reviews" && req.method === "POST") return postReview(req, res);
+  if (p === "/api/reviews" && req.method === "GET") return listPublicReviews(res);
+
   if (p === "/api/auth/login" && req.method === "POST") return login(req, res);
 
   if (p === "/api/auth/logout" && req.method === "POST") {
@@ -536,6 +658,12 @@ export async function route(req, res, url) {
   if ((m = /^\/api\/reports\/([\w-]+)$/.exec(p))) {
     if (req.method === "DELETE") return deleteReport(user, m[1], res);
     if (req.method === "PATCH") return markReportInvoiced(req, user, m[1], await readJson(req), res);
+  }
+
+  if (p === "/api/reviews/all" && req.method === "GET") return listAllReviews(user, res);
+  if ((m = /^\/api\/reviews\/([\w-]+)$/.exec(p))) {
+    if (req.method === "PATCH") return decideReview(req, user, m[1], res);
+    if (req.method === "DELETE") return deleteReview(user, m[1], res);
   }
 
   if (p === "/api/team" && req.method === "GET") return listTeam(user, res);

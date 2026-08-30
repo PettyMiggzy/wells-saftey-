@@ -1278,6 +1278,19 @@ details.faq__item > p {
   font-size: 0.86rem;
 }
 
+/* Build credit — present but deliberately quiet. */
+.footer__credit {
+  opacity: 0.7;
+}
+
+.footer__credit a {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.footer__credit a:hover {
+  border-bottom-color: var(--amber);
+}
+
 /* Sticky call bar for small screens. */
 .callbar {
   display: none;

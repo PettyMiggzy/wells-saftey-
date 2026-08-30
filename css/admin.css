@@ -829,3 +829,25 @@
   font-size: 0.84rem;
   color: var(--muted);
 }
+
+/* Feature on trial: working now, counting down. */
+.up-card--trial {
+  border-color: var(--amber);
+  background: #fffdf7;
+}
+
+.up-card--trial .need { color: var(--amber-dark); }
+
+.trial-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: #f0e2c4;
+  overflow: hidden;
+  margin-top: 0.15rem;
+}
+
+.trial-bar i {
+  display: block;
+  height: 100%;
+  background: var(--amber);
+}

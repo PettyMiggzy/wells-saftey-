@@ -995,14 +995,28 @@
 
   function upgradeGrid(me) {
     var copy = WS_API.state.featureCopy || {};
+    var trials = (me && me.trials) || {};
     return '<div class="up-grid">' + FEATURE_ROWS.map(function (f) {
       var on = me && me.plan.features.indexOf(f.key) !== -1;
       var c = copy[f.key] || {};
       var need = c.need ? c.need.charAt(0).toUpperCase() + c.need.slice(1) : "Pro";
-      return '<div class="up-card ' + (on ? "up-card--on" : "up-card--locked") + '">' +
-        "<h4>" + (on ? "&#10003; " : "&#128274; ") + esc(f.title) + "</h4>" +
+      var t = trials[f.key];
+      var trying = !on && t && t.left > 0;
+      var spent = !on && t && t.left === 0 && t.used > 0;
+
+      var cls = on ? "up-card--on" : (trying ? "up-card--trial" : "up-card--locked");
+      var mark = on ? "&#10003; " : (trying ? "&#9201; " : "&#128274; ");
+      var note = on ? "Included in " + esc(me.plan.name)
+        : trying ? t.left + " of " + t.limit + " free " + (t.left === 1 ? "go" : "goes") + " left"
+        : spent ? "Free goes used up &mdash; needs " + esc(need)
+        : "Needs " + esc(need);
+
+      return '<div class="up-card ' + cls + '">' +
+        "<h4>" + mark + esc(f.title) + "</h4>" +
         "<p>" + esc(c.pitch || "") + "</p>" +
-        '<span class="need">' + (on ? "Included in " + esc(me.plan.name) : "Needs " + esc(need)) + "</span>" +
+        '<span class="need">' + note + "</span>" +
+        (trying ? '<div class="trial-bar"><i style="width:' +
+          Math.round((t.limit - t.left) / t.limit * 100) + '%"></i></div>' : "") +
         "</div>";
     }).join("") + "</div>";
   }
@@ -1033,6 +1047,7 @@
       $("#cl-status").textContent = "Pushed at " + new Date().toLocaleTimeString() +
         " (version " + d.version + ").";
       toast("Book pushed to the server.");
+      WS_API.refresh().then(renderCloud);   // a trial go may have just been spent
     }).catch(function (err) {
       if (err.status === 409) {
         cloud.version = err.payload.currentVersion;

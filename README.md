@@ -140,10 +140,24 @@ Features above the free tier are gated **server-side** — a locked call answers
 `402` with the plan that unlocks it, which is what the upgrade panel renders.
 Hiding a button is not gating; the server is the one saying no.
 
+Each paid feature gets **five free uses** first, counted per account on writes
+only, so the value lands before the invoice does. The Dispatch Book shows the
+countdown on each card. Once a trial is spent, writes need the plan but **reads
+stay open** — locking someone out of books they already created would be holding
+their data hostage, not selling them something.
+
+## Guide for Paul
+
+`guide.html` (passcode-gated, `noindex`, print-friendly) explains the whole
+system in plain English: the three links, invoicing and chasing money, driver
+credentials, job reports, backups, what costs money and why, and what still
+needs his input. Linked from the Dispatch Book header.
+
 ## Crew tools
 
-Both private pages sit behind a shared passcode (default **104Paul**, changeable
-in Settings → Passcode).
+Both private pages sit behind a shared passcode — the one handed to the crew
+directly, not written down here. Change it in Settings → Passcode; only the hash
+is ever stored.
 
 ### Drivers
 

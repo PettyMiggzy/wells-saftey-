@@ -11,7 +11,7 @@ import {
   createUser, userByEmail, userForToken, verifyPassword, setPassword,
   startSession, endSession, throttled, noteFailure, clearFailures
 } from "./auth.js";
-import { PLANS, planOf, allows, lockedPayload, FEATURE_COPY } from "./plans.js";
+import { PLANS, planOf, allows, lockedPayload, FEATURE_COPY, TRIAL_USES } from "./plans.js";
 import { json, text, readJson, cookies, setCookie, escapeHtml } from "./http.js";
 
 const COOKIE = "ws_session";
@@ -25,9 +25,55 @@ function requireUser(req, res) {
   return user;
 }
 
-function requireFeature(user, feature, res) {
+/* Trial state for one account+feature. */
+function trialOf(accountId, feature) {
+  const row = db.prepare("SELECT used FROM trials WHERE account_id = ? AND feature = ?")
+    .get(accountId, feature);
+  const used = row ? row.used : 0;
+  return { used, limit: TRIAL_USES, left: Math.max(0, TRIAL_USES - used) };
+}
+
+function burnTrial(accountId, feature) {
+  db.prepare(`INSERT INTO trials (account_id, feature, used, first_used, last_used)
+              VALUES (?,?,1,?,?)
+              ON CONFLICT(account_id, feature) DO UPDATE SET
+                used = used + 1, last_used = excluded.last_used`)
+    .run(accountId, feature, now(), now());
+}
+
+/* Gate one feature.
+   On plan  -> straight through.
+   Off plan -> the trial covers it while uses remain. A write spends one; a
+   read does not, since reading back what you already put in should not cost a
+   go. When the trial is spent the answer is 402 carrying how far they got. */
+function requireFeature(user, feature, res, { write = false } = {}) {
   if (allows(user.plan, feature)) return true;
-  json(res, 402, lockedPayload(feature));
+
+  const trial = trialOf(user.account_id, feature);
+  if (trial.left > 0) {
+    if (write) {
+      burnTrial(user.account_id, feature);
+      trial.used += 1;
+      trial.left -= 1;
+    }
+    res.setHeader("x-trial-feature", feature);
+    res.setHeader("x-trial-left", String(trial.left));
+    res.setHeader("x-trial-limit", String(trial.limit));
+    return true;
+  }
+
+  // Trial spent: new writes need the plan. Reads stay open to anyone who
+  // already put data here during the trial — locking someone out of their own
+  // invoices to force an upgrade is holding their books hostage, not selling
+  // them something. They can always get their data back out.
+  if (!write && trial.used > 0) {
+    res.setHeader("x-trial-feature", feature);
+    res.setHeader("x-trial-left", "0");
+    res.setHeader("x-trial-readonly", "1");
+    return true;
+  }
+
+  json(res, 402, lockedPayload(feature, { used: trial.used, limit: trial.limit }));
   return false;
 }
 
@@ -65,10 +111,17 @@ async function login(req, res) {
 
 function publicUser(u) {
   const plan = planOf(u.plan);
+  // What a trial still covers, for features the plan does not include.
+  const trials = {};
+  for (const f of Object.keys(FEATURE_COPY)) {
+    if (!plan.features.includes(f)) trials[f] = trialOf(u.account_id, f);
+  }
   return {
     id: u.id, name: u.name, email: u.email, role: u.role,
     account: u.account_name,
     plan: { id: plan.id, name: plan.name, price: plan.price, features: plan.features, limits: plan.limits },
+    trials,
+    trialUses: TRIAL_USES,
     catalogue: PLANS,
     featureCopy: FEATURE_COPY
   };
@@ -86,7 +139,7 @@ function getBook(user, res) {
 }
 
 async function putBook(req, user, res) {
-  if (!requireFeature(user, "sync", res)) return;
+  if (!requireFeature(user, "sync", res, { write: true })) return;
   if (!requireRole(user, ["owner", "dispatch"], res)) return;
 
   const { doc, baseVersion } = await readJson(req);
@@ -115,7 +168,7 @@ async function putBook(req, user, res) {
 /* ------------------------------------------------------------ reports --- */
 
 async function postReport(req, user, res) {
-  if (!requireFeature(user, "reports", res)) return;
+  if (!requireFeature(user, "reports", res, { write: true })) return;
 
   const body = await readJson(req);
   const report = body.report || body;
@@ -129,7 +182,12 @@ async function postReport(req, user, res) {
   }
 
   const photos = Array.isArray(body.photos) ? body.photos.slice(0, 24) : [];
-  const limitBytes = planOf(user.plan).limits.photoMb * 1024 * 1024;
+  // Starter allows no photo storage, but a trial report without its photos is
+  // not the feature — so while on trial, borrow Pro's allowance.
+  const photoMb = allows(user.plan, "reports")
+    ? planOf(user.plan).limits.photoMb
+    : PLANS.pro.limits.photoMb;
+  const limitBytes = photoMb * 1024 * 1024;
   const used = db.prepare("SELECT COALESCE(SUM(bytes),0) AS b FROM photos p JOIN reports r ON r.id = p.report_id WHERE r.account_id = ?")
     .get(user.account_id).b;
 
@@ -213,7 +271,7 @@ function markReportInvoiced(req, user, id, body, res) {
 /* -------------------------------------------------------------- users --- */
 
 async function createTeamUser(req, user, res) {
-  if (!requireFeature(user, "accounts", res)) return;
+  if (!requireFeature(user, "accounts", res, { write: true })) return;
   if (!requireRole(user, ["owner"], res)) return;
 
   const { email, name, password, role } = await readJson(req);
@@ -269,7 +327,7 @@ async function updateTeamUser(req, user, id, res) {
 /* ------------------------------------------------------------- portal --- */
 
 async function shareInvoice(req, user, res) {
-  if (!requireFeature(user, "portal", res)) return;
+  if (!requireFeature(user, "portal", res, { write: true })) return;
   const { invoice, client, settings } = await readJson(req);
   if (!invoice || !invoice.id) return json(res, 400, { error: "invoice_required" });
 

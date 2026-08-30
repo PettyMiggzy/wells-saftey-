@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How it all works — Wells Safety</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0e1420">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/driver.css">
+<link rel="stylesheet" href="css/guide.css">
+</head>
+<body class="gd">
+
+<header class="ad-top">
+  <div class="ad-top__bar">
+    <a class="logo" href="admin.html">
+      <svg class="logo__mark" viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M24 3 6 10v14c0 11 7.6 18.6 18 21 10.4-2.4 18-10 18-21V10L24 3Z" fill="#ffb020"/>
+        <path d="M24 3 6 10v14c0 11 7.6 18.6 18 21V3Z" fill="#e0930a"/>
+        <path d="m14 20 4 12h3l3-9 3 9h3l4-12h-3.5l-2.2 7.6L26 20h-4l-2.3 7.6L17.5 20H14Z" fill="#0e1420"/>
+      </svg>
+      <span class="logo__text">
+        <span class="logo__name">Wells<span>Safety</span></span>
+        <span class="logo__tag">How it works</span>
+      </span>
+    </a>
+    <div class="ad-top__actions">
+      <button class="btn btn--dark btn--sm" id="print-guide">Print this</button>
+      <a class="btn btn--primary btn--sm" href="admin.html">Open Dispatch Book</a>
+    </div>
+  </div>
+</header>
+
+<main class="gd-wrap" id="main">
+
+  <p class="gd-hi">Paul &mdash;</p>
+  <h1>Everything you have, and how to work it</h1>
+  <p class="gd-lede">
+    Three things were built for you: the public website customers find, the
+    Dispatch Book where you invoice and chase money, and a job report form your
+    drivers fill out on their phones. This page explains all of it in plain
+    English. Nothing here needs a computer person.
+  </p>
+
+  <nav class="gd-toc" aria-label="Contents">
+    <a href="#links">Your links &amp; passcode</a>
+    <a href="#money">Getting paid</a>
+    <a href="#drivers">Your drivers</a>
+    <a href="#reports">Job reports</a>
+    <a href="#backup">Not losing everything</a>
+    <a href="#costs">What costs money</a>
+    <a href="#todo">What still needs you</a>
+  </nav>
+
+  <!-- ------------------------------------------------------------ links -->
+  <section id="links">
+    <h2>1. Your links and the passcode</h2>
+
+    <div class="gd-cards">
+      <div class="gd-card">
+        <h3>The public website</h3>
+        <p class="gd-url">wells-saftey.vercel.app</p>
+        <p>What customers and brokers see. Anyone can visit it.</p>
+      </div>
+      <div class="gd-card">
+        <h3>Dispatch Book &mdash; yours</h3>
+        <p class="gd-url">wells-saftey.vercel.app/admin.html</p>
+        <p>Invoices, customers, drivers, reports. <strong>Bookmark this.</strong> It is not linked from the website on purpose.</p>
+      </div>
+      <div class="gd-card">
+        <h3>Job report &mdash; drivers</h3>
+        <p class="gd-url">wells-saftey.vercel.app/driver.html</p>
+        <p>Send this one to Tim and Cole. They open it on their phone after a run.</p>
+      </div>
+    </div>
+
+    <div class="gd-note gd-note--warn">
+      <strong>About the passcode.</strong>
+      Both private pages ask for a passcode. It keeps the pages away from anyone
+      who stumbles onto the link &mdash; but it is <em>not</em> a real login, and
+      anyone who knows their way around a browser could get past it. Do not treat
+      it as a lock on a safe. What actually protects your numbers is that they
+      live on your own machine, not on a website somebody could break into.
+      <br><br>
+      Change it in <strong>Settings &rarr; Passcode</strong>, and tell your drivers
+      the new one. Changing it only affects the browser you change it in.
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ money -->
+  <section id="money">
+    <h2>2. Getting paid</h2>
+
+    <h3>Set this up once</h3>
+    <ol class="gd-steps">
+      <li><strong>Settings &rarr; Your business.</strong> Your name, address, phone, and how people pay you (check, Zelle, ACH). This prints at the top of every invoice.</li>
+      <li><strong>Settings &rarr; Default rates.</strong> Put your real numbers in: lead, chase, high pole, steer, route survey, deadhead, wait time, per diem, fuel. The ones in there now are placeholders &mdash; <strong>change them to what you actually charge.</strong></li>
+      <li><strong>Clients &rarr; New Customer.</strong> Add the brokers you run for, with their payment terms (30 days, 45 days). Then you never retype them.</li>
+    </ol>
+
+    <h3>Every invoice after that</h3>
+    <ol class="gd-steps">
+      <li>Go to <strong>Clients</strong>, find the broker, hit <strong>Invoice</strong>. The due date fills in from their terms automatically.</li>
+      <li>Fill in the load number, permit, and where it went.</li>
+      <li>Click the buttons for what you ran &mdash; <em>Lead escort</em>, <em>High pole</em>, and so on. Each one drops a line in at your saved rate. Type the miles over the quantity.</li>
+      <li>Set status to <strong>Sent / unpaid</strong> and hit <strong>Save invoice</strong>.</li>
+      <li>Hit <strong>Print / PDF</strong>. On the print screen choose <em>Save as PDF</em>, then email it to the broker.</li>
+    </ol>
+
+    <h3>Chasing the money</h3>
+    <p>
+      The <strong>Dashboard</strong> is built around one question: who owes you and
+      how late are they.
+    </p>
+    <ul class="gd-list">
+      <li><strong>Outstanding</strong> &mdash; everything billed and not yet paid.</li>
+      <li><strong>Overdue</strong> &mdash; past the due date. This is your call list.</li>
+      <li><strong>Aging</strong> &mdash; how long it has been sitting. Anything in the 31&ndash;60 column or worse turns red, because that is when money starts going missing for good.</li>
+      <li><strong>Who owes you</strong> &mdash; by broker, biggest first, with how many days late their oldest one is.</li>
+    </ul>
+    <p>
+      When a cheque lands, hit <strong>Mark paid</strong> on that row. That is the
+      whole job &mdash; it dates it today and moves it out of your Outstanding.
+    </p>
+
+    <div class="gd-note">
+      <strong>For your bookkeeper or at tax time:</strong> Invoices &rarr;
+      <strong>Export CSV</strong>. That opens in Excel and has every invoice,
+      what it was for, and whether it was paid.
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------- drivers -->
+  <section id="drivers">
+    <h2>3. Your drivers</h2>
+    <p>
+      The <strong>Drivers</strong> tab is a roster, but the part worth using is the
+      credential dates. Put in when each card expires &mdash; PEVO, ATSSA, WITPAC,
+      TIMS, medical card, insurance.
+    </p>
+    <p>
+      Anything expiring inside 60 days, or already expired, jumps to the top of
+      your Dashboard with the number of days on it. <strong>A lapsed card parks a
+      driver</strong>, and finding out at a scale house is the expensive way to
+      find out.
+    </p>
+    <p>
+      Set them up once for yourself, Tim and Cole, and the Dashboard nags you
+      instead of you having to remember.
+    </p>
+  </section>
+
+  <!-- ---------------------------------------------------------- reports -->
+  <section id="reports">
+    <h2>4. Job reports from the road</h2>
+    <p>
+      Send your drivers the <strong>driver.html</strong> link and the passcode.
+      After a run they fill out four short screens on their phone: who they are,
+      the run, photos, then send.
+    </p>
+    <p>
+      They can photograph the load, the permit, damage, receipts &mdash; whatever
+      backs up the job. The photos get shrunk automatically so they actually send
+      over a phone signal instead of failing.
+    </p>
+
+    <h3>How it reaches you</h3>
+    <p>
+      Right now, when they hit <strong>Send to dispatch</strong>, their phone opens
+      its normal share menu with the report and photos attached, and they text or
+      email it to you. You save the attachment, then in the Dispatch Book go to
+      <strong>Reports &rarr; Import a report</strong> and pick it.
+    </p>
+    <p>
+      Importing the same one twice is harmless &mdash; it notices and skips it.
+    </p>
+
+    <div class="gd-note gd-note--good">
+      <strong>The good bit.</strong> Open an imported report and hit
+      <strong>Make an invoice from this</strong>. It prices the whole run off your
+      saved rates &mdash; the miles for each thing they ran, plus deadhead, wait
+      time and per diem &mdash; and picks the customer if you already have them.
+      A 150&nbsp;mile lead and high pole run with 40 deadhead, 2 hours waiting and
+      a night out comes out at $1,082.50 without you typing a number. Check it
+      over, then send it.
+    </div>
+    <p>
+      Once a report has been invoiced it gets marked, so you cannot accidentally
+      bill the same run twice.
+    </p>
+  </section>
+
+  <!-- ----------------------------------------------------------- backup -->
+  <section id="backup">
+    <h2>5. Not losing everything</h2>
+    <div class="gd-note gd-note--warn">
+      <strong>Read this bit twice.</strong>
+      Right now everything &mdash; invoices, customers, drivers &mdash; is saved
+      <em>in the browser on that one computer</em>. Nothing is on the internet.
+      That is private and it is free, but it means:
+      <ul>
+        <li>If you clear your browsing history the wrong way, <strong>it is gone</strong>.</li>
+        <li>Your phone and your laptop keep two separate sets of books.</li>
+        <li>A dead hard drive takes it with it.</li>
+      </ul>
+      <strong>So: Settings &rarr; Download backup, once a week.</strong> Save the
+      file to Google Drive or email it to yourself. If anything ever goes wrong,
+      <strong>Restore from backup</strong> reads that same file straight back in.
+    </div>
+    <p>
+      There is a proper fix for this &mdash; see below.
+    </p>
+  </section>
+
+  <!-- ------------------------------------------------------------ costs -->
+  <section id="costs">
+    <h2>6. What costs money, and what does not</h2>
+    <p>
+      Everything described so far is yours, free, forever. There is no server
+      behind it and no monthly bill.
+    </p>
+    <p>
+      A few things need a real server, which costs real money every month to run
+      &mdash; storage, backups, bandwidth. Those are the extras:
+    </p>
+    <table class="gd-table">
+      <thead><tr><th>What it does</th><th>Why it costs</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Books on every device</strong><br>Your phone and the office computer show the same invoices. The "losing everything" problem above goes away.</td><td>Your data has to live somewhere that is backed up.</td></tr>
+        <tr><td><strong>Reports file themselves</strong><br>Driver hits Send and it lands in your Reports tab with the photos. No texting files, no importing.</td><td>Photo storage adds up fast.</td></tr>
+        <tr><td><strong>A login for each driver</strong><br>You see who filed what, and you can cut off access the day someone leaves &mdash; which one shared passcode can never do.</td><td>Real accounts need a server to check them.</td></tr>
+        <tr><td><strong>Invoice links for customers</strong><br>Email a broker a private link to their invoice and see the moment they open it. Useful when someone claims they never got it.</td><td>Hosting a page they can open any time.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>You get to try each one free a few times before deciding.</strong>
+      Each has five free goes. The Dispatch Book shows a countdown on the card so
+      you know where you stand, and when they run out it tells you what it costs.
+      Nothing you already did disappears &mdash; you can always read and export
+      your own data, whatever you decide.
+    </p>
+  </section>
+
+  <!-- ------------------------------------------------------------- todo -->
+  <section id="todo">
+    <h2>7. What still needs you</h2>
+    <ol class="gd-steps">
+      <li>
+        <strong>The domain.</strong> wellssafety.com is not paid up and is still
+        pointed at Squarespace, which is why it shows an error. Until that is
+        sorted, use the vercel.app links above. <strong>paul@wellssafety.com
+        cannot receive email yet</strong> for the same reason &mdash; it starts
+        working the moment the domain does.
+      </li>
+      <li>
+        <strong>Your real rates.</strong> The numbers in Settings are placeholders.
+        Nothing you invoice is right until those are yours.
+      </li>
+      <li>
+        <strong>Insurance limits.</strong> The website says "commercial auto and
+        general liability" with no figure, because nobody confirmed one. Tell me
+        the real limits and I will put them on.
+      </li>
+      <li>
+        <strong>Customer quotes.</strong> There is no testimonials section, because
+        I will not put words in a customer's mouth. Send me three real ones with a
+        name and company and I will add it.
+      </li>
+      <li>
+        <strong>Tim and Cole.</strong> They are on the About page now with what I
+        was told &mdash; Tim a veteran, Cole your mechanic. If you want last names,
+        years of service, or anything corrected, say so.
+      </li>
+      <li>
+        <strong>A high pole photo.</strong> None of the pictures show a pole up.
+        Next time one is deployed, grab a shot and that card gets the real thing.
+      </li>
+    </ol>
+  </section>
+
+  <p class="gd-end">
+    Anything here that does not make sense, or does not match how you actually
+    run the business &mdash; say so and it gets changed. It is meant to fit your
+    work, not the other way round.
+  </p>
+</main>
+
+<script src="js/auth.js" defer></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("print-guide").addEventListener("click", function () {
+    window.print();
+  });
+  WS_AUTH.require({
+    title: "Wells Safety",
+    subtitle: "Enter the passcode to read the guide."
+  });
+});
+</script>
+</body>
+</html>

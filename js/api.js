@@ -54,8 +54,24 @@ window.WS_API = (function () {
       .catch(function () { state.available = false; return state; });
   }
 
+  /* Usable right now — either the plan includes it, or a free trial still has
+     goes left. Without the trial arm the UI would never call a trialled
+     feature, and the trial would silently never happen. */
   function can(feature) {
+    if (!state.me) return false;
+    if (state.me.plan.features.indexOf(feature) !== -1) return true;
+    var t = state.me.trials && state.me.trials[feature];
+    return !!(t && t.left > 0);
+  }
+
+  /* Included in the paid plan, ignoring any trial. */
+  function onPlan(feature) {
     return !!(state.me && state.me.plan.features.indexOf(feature) !== -1);
+  }
+
+  function trialLeft(feature) {
+    var t = state.me && state.me.trials && state.me.trials[feature];
+    return t ? t.left : null;
   }
 
   /* ------------------------------------------------------- upgrade panel -- */
@@ -105,6 +121,8 @@ window.WS_API = (function () {
     state: state,
     init: init,
     can: can,
+    onPlan: onPlan,
+    trialLeft: trialLeft,
     showUpgrade: showUpgrade,
 
     login: function (email, password) {
@@ -114,6 +132,14 @@ window.WS_API = (function () {
     logout: function () {
       return req("/api/auth/logout", { method: "POST" })
         .then(function () { state.me = null; });
+    },
+
+    /* Pull the current user again — trial counters move as features get used. */
+    refresh: function () {
+      return req("/api/auth/me").then(function (d) {
+        state.me = d.user || null;
+        return state.me;
+      }).catch(function () { return state.me; });
     },
 
     getBook: function () { return req("/api/book"); },

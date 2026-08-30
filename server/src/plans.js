@@ -64,6 +64,11 @@ export const FEATURE_COPY = {
   }
 };
 
+/* How many times a paid feature works before it locks. Counted per account,
+   per feature, and only on writes — reading back what you already put in
+   should not burn a go. */
+export const TRIAL_USES = Number(process.env.TRIAL_USES || 5);
+
 export function planOf(id) {
   return PLANS[id] || PLANS.starter;
 }
@@ -73,7 +78,7 @@ export function allows(planId, feature) {
 }
 
 /* The payload a 402 carries, so the client can render a real upgrade prompt. */
-export function lockedPayload(feature) {
+export function lockedPayload(feature, trial) {
   const copy = FEATURE_COPY[feature] || { title: feature, need: "pro", pitch: "" };
   const need = planOf(copy.need);
   return {
@@ -81,6 +86,7 @@ export function lockedPayload(feature) {
     feature,
     title: copy.title,
     pitch: copy.pitch,
+    trial: trial || null,          // { used, limit } when a trial ran out
     requiresPlan: { id: need.id, name: need.name, price: need.price, blurb: need.blurb }
   };
 }

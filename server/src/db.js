@@ -90,6 +90,17 @@ CREATE TABLE IF NOT EXISTS shares (
   last_view   TEXT
 );
 
+-- Free trial usage. A paid feature works a handful of times before it locks,
+-- so the value is felt before the invoice arrives.
+CREATE TABLE IF NOT EXISTS trials (
+  account_id  TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  feature     TEXT NOT NULL,
+  used        INTEGER NOT NULL DEFAULT 0,
+  first_used  TEXT,
+  last_used   TEXT,
+  PRIMARY KEY (account_id, feature)
+);
+
 CREATE INDEX IF NOT EXISTS idx_reports_account ON reports(account_id, filed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_photos_report ON photos(report_id, idx);
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);

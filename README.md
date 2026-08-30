@@ -7,22 +7,26 @@ running oversize, overweight and superload escorts in all 48 states.
 No build step, no framework, no dependencies. Open `index.html` or upload the
 folder to any host.
 
-## ⚠️ Confirm before launch
+## Business details
 
-Contact details are the real ones read off the trucks — **Wells Safety LLC,
-Martinsville, IN, (765) 684-1909**. Two things still need confirming:
+Confirmed by the owner and reflected throughout the site:
+
+- **Wells Safety LLC**, Martinsville, Indiana
+- **Dispatch: (765) 684-1909**, 24/7
+- Operates in **all 48 contiguous states**
+- Veteran owned; founder is a retired police officer
+- Certifications: **PEVO**, **ATSSA** flagger, **WITPAC**, **TIMS**
+
+### Still to confirm
 
 | Item | Current value | Action |
 | --- | --- | --- |
-| Dispatch email | `dispatch@wellssafety.com` | Confirm this inbox exists, or swap it |
-| Testimonials | Three quotes on the home page | **Illustrative placeholders** — replace with real client quotes or delete the section |
+| Dispatch email | `dispatch@wellssafety.com` | Inferred from the domain — confirm the inbox exists or swap it |
+| Insurance limits | Stated as "commercial auto and general liability", no figure | Add the real limits if you want them shown |
 
-Also confirm these business claims, since they are stated as fact on the site:
-
-- Stat strip on the home page — `24/7`, `48 states`, `$1M`, `100% clean safety record`
-- `$1,000,000` commercial auto liability, in the credentials band and `about.html`
-- Certification and training claims in `about.html` (flagger, first aid, CPR)
-- Veteran and retired-law-enforcement ownership framing throughout
+Fabricated client testimonials were removed rather than left on a live business
+site. If you want a proof section back, supply real quotes with a name and
+company and it can be added.
 
 ## Pages
 

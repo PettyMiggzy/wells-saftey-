@@ -100,5 +100,10 @@ the visitor to call or text instead of opening a mail client.
 Any static host works — GitHub Pages, Netlify, Cloudflare Pages, S3, or plain
 nginx. Upload the repository contents as-is; `index.html` is the entry point.
 
-Update the `https://wellssafety.com/` URLs in each page's `<link rel="canonical">`,
-Open Graph tags and `sitemap.xml` if the site lives on a different domain.
+If the site moves to another host, update the absolute URLs in each page's
+`<link rel="canonical">`, Open Graph tags and `sitemap.xml` — see **Domain**
+above for the one-command swap.
+
+Do not add a `vercel.json`. One was tried and it broke the build: production
+stopped at the commit immediately before it and only recovered once the file
+was removed. Vercel serves this repo correctly with no configuration at all.

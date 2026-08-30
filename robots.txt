@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://wellssafety.com/sitemap.xml
+Sitemap: https://wells-saftey.vercel.app/sitemap.xml

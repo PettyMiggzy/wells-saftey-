@@ -21,7 +21,7 @@ Confirmed by the owner and reflected throughout the site:
 
 | Item | Current value | Action |
 | --- | --- | --- |
-| Dispatch email | `dispatch@wellssafety.com` | Inferred from the domain — confirm the inbox exists or swap it |
+| Dispatch email | **removed** | `wellssafety.com` is not paid up, so the mailbox cannot receive mail. Give a working address to wire the quote form to |
 | Insurance limits | Stated as "commercial auto and general liability", no figure | Add the real limits if you want them shown |
 
 Fabricated client testimonials were removed rather than left on a live business
@@ -76,6 +76,24 @@ To add more, drop the originals somewhere and re-run the crop script pattern in
 2.3:1 for the CTA banner.
 
 There is no longer any AI-generated imagery on the site.
+
+## Domain
+
+The site currently points at `https://wells-saftey.vercel.app` — canonical
+tags, Open Graph URLs, JSON-LD and `sitemap.xml`. The `wellssafety.com` domain
+is not active yet.
+
+When it is paid up and pointed at Vercel, switch every absolute URL back:
+
+```sh
+grep -rl 'wells-saftey.vercel.app' . --include='*.html' --include='*.xml' --include='*.txt' \
+  | xargs sed -i 's|https://wells-saftey.vercel.app|https://wellssafety.com|g'
+```
+
+Then restore a dispatch email: set `data-email` on the quote form in
+`contact.html`, and add the address back to the footer and contact page. While
+`data-email` is empty the form copies the request to the clipboard and directs
+the visitor to call or text instead of opening a mail client.
 
 ## Deploying
 

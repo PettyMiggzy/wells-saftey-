@@ -124,6 +124,23 @@
       get("details")
     ];
 
+    status.hidden = false;
+    status.dataset.state = "ok";
+
+    // Until a dispatch inbox exists, there is nowhere to send this. Rather than
+    // opening a mail client addressed to a dead mailbox, send people to the
+    // phone — and copy their details so nothing they typed is lost.
+    if (!form.dataset.email) {
+      var summary = lines.join("\n");
+      var phone = form.dataset.phone || "";
+      status.textContent =
+        "Thanks — your details are copied to your clipboard. Please call or text dispatch at " +
+        phone +
+        " to confirm, and paste them into a message.";
+      if (navigator.clipboard) navigator.clipboard.writeText(summary).catch(function () {});
+      return;
+    }
+
     var mailto =
       "mailto:" +
       form.dataset.email +
@@ -132,8 +149,6 @@
       "&body=" +
       encodeURIComponent(lines.join("\n"));
 
-    status.hidden = false;
-    status.dataset.state = "ok";
     status.textContent =
       "Thanks — opening your email client to send this request. If nothing opens, call dispatch directly.";
 

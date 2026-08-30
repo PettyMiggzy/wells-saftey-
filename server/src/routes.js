@@ -4,7 +4,7 @@
 
 import { randomUUID, randomBytes } from "node:crypto";
 import { writeFile, mkdir, readFile, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve, sep } from "node:path";
 
 import { db, now } from "./db.js";
 import {
@@ -16,6 +16,16 @@ import { json, text, readJson, cookies, setCookie, escapeHtml } from "./http.js"
 
 const COOKIE = "ws_session";
 const PHOTO_DIR = process.env.PHOTO_DIR || "/data/photos";
+const PHOTO_ROOT = resolve(PHOTO_DIR);
+
+/* The directory for one report, or null if the id would escape PHOTO_DIR.
+   Checked by resolving rather than by inspecting the string, so encoded and
+   doubled traversals cannot slip past. */
+function photoDir(id) {
+  const full = resolve(join(PHOTO_ROOT, String(id)));
+  if (full !== PHOTO_ROOT && !full.startsWith(PHOTO_ROOT + sep)) return null;
+  return full;
+}
 
 /* ------------------------------------------------------------- guards --- */
 
@@ -167,16 +177,59 @@ async function putBook(req, user, res) {
 
 /* ------------------------------------------------------------ reports --- */
 
+/* A report is written by a driver — the least-trusted role — and then rendered
+   in the owner's admin. Normalise it on the way in: known fields only, strings
+   capped, coordinates coerced to numbers. Escaping at render time is still the
+   real defence; this stops junk being stored in the first place. */
+const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
+
+function cleanReport(raw) {
+  const str = (v, max = 400) => (v == null ? "" : String(v).slice(0, max));
+  const geo = raw.geo && typeof raw.geo === "object" ? raw.geo : null;
+  const lat = geo ? Number(geo.lat) : NaN;
+  const lng = geo ? Number(geo.lng) : NaN;
+  const acc = geo ? Number(geo.accuracy) : NaN;
+
+  return {
+    kind: "wellssafety.jobreport",
+    version: 1,
+    // The id becomes a directory name. Anything outside this charset is
+    // discarded and replaced with a generated one, so a filed report can never
+    // steer a write out of PHOTO_DIR.
+    id: SAFE_ID.test(String(raw.id || "")) ? String(raw.id) : "",
+    filed: str(raw.filed, 40),
+    driver: str(raw.driver, 120),
+    date: str(raw.date, 20),
+    unit: str(raw.unit, 40),
+    customer: str(raw.customer, 160),
+    loadRef: str(raw.loadRef, 80),
+    permit: str(raw.permit, 80),
+    roles: Array.isArray(raw.roles) ? raw.roles.slice(0, 10).map((r) => str(r, 40)) : [],
+    origin: str(raw.origin, 120),
+    destination: str(raw.destination, 120),
+    miles: str(raw.miles, 20),
+    deadhead: str(raw.deadhead, 20),
+    waitHours: str(raw.waitHours, 20),
+    nights: str(raw.nights, 20),
+    notes: str(raw.notes, 4000),
+    geo: (isFinite(lat) && isFinite(lng))
+      ? { lat, lng, accuracy: isFinite(acc) ? Math.round(acc) : null, at: str(geo.at, 40) }
+      : null
+  };
+}
+
 async function postReport(req, user, res) {
   if (!requireFeature(user, "reports", res, { write: true })) return;
 
   const body = await readJson(req);
-  const report = body.report || body;
-  if (report.kind !== "wellssafety.jobreport") {
+  const incoming = body.report || body;
+  if (!incoming || incoming.kind !== "wellssafety.jobreport") {
     return json(res, 400, { error: "not_a_job_report" });
   }
+  const report = cleanReport(incoming);
 
-  const id = String(report.id || randomUUID()).slice(0, 64);
+  const id = report.id || randomUUID();
+  report.id = id;
   if (db.prepare("SELECT 1 FROM reports WHERE id = ?").get(id)) {
     return json(res, 200, { id, duplicate: true });
   }
@@ -197,7 +250,9 @@ async function postReport(req, user, res) {
          report.driver || user.name, report.customer || "", report.loadRef || "",
          JSON.stringify(report));
 
-  await mkdir(join(PHOTO_DIR, id), { recursive: true });
+  const dir = photoDir(id);
+  if (!dir) return json(res, 400, { error: "bad_report_id" });
+  await mkdir(dir, { recursive: true });
 
   let stored = 0, skipped = 0, total = used;
   for (let i = 0; i < photos.length; i++) {
@@ -205,7 +260,7 @@ async function postReport(req, user, res) {
     if (!m) { skipped++; continue; }
     const buf = Buffer.from(m[2], "base64");
     if (total + buf.length > limitBytes) { skipped++; continue; }
-    const path = join(PHOTO_DIR, id, `${i}.jpg`);
+    const path = join(dir, `${i}.jpg`);
     await writeFile(path, buf);
     db.prepare("INSERT INTO photos (id, report_id, idx, mime, bytes, path) VALUES (?,?,?,?,?,?)")
       .run(randomUUID(), id, i, m[1], buf.length, path);
@@ -258,7 +313,8 @@ async function deleteReport(user, id, res) {
   const owned = db.prepare("SELECT 1 FROM reports WHERE id = ? AND account_id = ?").get(id, user.account_id);
   if (!owned) return json(res, 404, { error: "no_such_report" });
   db.prepare("DELETE FROM reports WHERE id = ?").run(id);   // photos cascade
-  await rm(join(PHOTO_DIR, id), { recursive: true, force: true });
+  const dir = photoDir(id);
+  if (dir) await rm(dir, { recursive: true, force: true });
   json(res, 200, { ok: true });
 }
 

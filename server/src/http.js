@@ -65,19 +65,19 @@ export function cookies(req) {
   return out;
 }
 
-export function setCookie(res, name, value, { maxAge, expires, clear } = {}) {
-  const secure = process.env.INSECURE_COOKIES === "1" ? "" : " Secure;";
-  const bits = [
-    `${name}=${clear ? "" : encodeURIComponent(value)}`,
-    "Path=/",
-    "HttpOnly",
-    "SameSite=Lax" + ";",
-    secure
-  ].join(";").replace(/;;/g, ";");
-  const age = clear ? "Max-Age=0" : (maxAge ? `Max-Age=${maxAge}` : "");
-  const value_ = [bits, age].filter(Boolean).join("; ");
+export function setCookie(res, name, value, { maxAge, clear } = {}) {
+  // Built as a list and joined once. Assembling this by string concatenation
+  // is how a Secure flag quietly goes missing in production.
+  const parts = [`${name}=${clear ? "" : encodeURIComponent(value)}`];
+  parts.push("Path=/");
+  parts.push("HttpOnly");
+  parts.push("SameSite=Lax");
+  if (process.env.INSECURE_COOKIES !== "1") parts.push("Secure");
+  parts.push(`Max-Age=${clear ? 0 : (maxAge || 0)}`);
+
+  const header = parts.join("; ");
   const prev = res.getHeader("set-cookie");
-  res.setHeader("set-cookie", prev ? [].concat(prev, value_) : [value_]);
+  res.setHeader("set-cookie", prev ? [].concat(prev, header) : [header]);
 }
 
 const MIME = {

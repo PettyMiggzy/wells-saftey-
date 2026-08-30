@@ -153,6 +153,14 @@ What is actually enforced, and what is not:
   `MAX_BODY_MB` (25 by default) and by the plan's storage limit.
 - **Static files** — paths are normalised and confined to `STATIC_DIR`;
   traversal attempts (`../`, encoded, and doubled forms) were tested and 404.
+- **Report ids** — an id becomes a directory name under `PHOTO_DIR`, so it is
+  restricted to `[A-Za-z0-9_-]{1,64}`; anything else is replaced with a
+  generated id. Every photo path is then re-resolved and rejected if it lands
+  outside `PHOTO_DIR`. Tested with `../`, encoded, doubled and absolute forms.
+- **Filed reports** — normalised on ingest to known fields, with strings capped
+  and coordinates coerced to numbers. Reports are written by drivers, the
+  least-trusted role, and rendered in the owner's admin, so they are escaped at
+  render as well.
 
 **The shared passcode on `/admin.html` and `/driver.html` is not part of this.**
 It is a client-side check that keeps the pages away from anyone who stumbles

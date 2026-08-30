@@ -544,11 +544,18 @@
       ["Photos attached", r.photoCount]
     ].filter(function (p) { return p[1]; });
 
-    var geo = r.geo
+    // A report is written by whoever filed it, so treat every field as hostile.
+    // Coordinates are coerced to numbers — anything else is dropped rather than
+    // rendered, since these land in the owner's page.
+    var lat = r.geo ? Number(r.geo.lat) : NaN;
+    var lng = r.geo ? Number(r.geo.lng) : NaN;
+    var acc = r.geo ? Number(r.geo.accuracy) : NaN;
+    var geo = (isFinite(lat) && isFinite(lng))
       ? '<p class="ad-note" style="padding:0">Location stamp: ' +
-        '<a href="https://www.google.com/maps?q=' + r.geo.lat + "," + r.geo.lng +
-        '" target="_blank" rel="noopener">' + r.geo.lat.toFixed(5) + ", " +
-        r.geo.lng.toFixed(5) + "</a> (&plusmn;" + r.geo.accuracy + "m)</p>"
+        '<a href="https://www.google.com/maps?q=' + encodeURIComponent(lat + "," + lng) +
+        '" target="_blank" rel="noopener">' + esc(lat.toFixed(5)) + ", " +
+        esc(lng.toFixed(5)) + "</a>" +
+        (isFinite(acc) ? " (&plusmn;" + esc(Math.round(acc)) + "m)" : "") + "</p>"
       : "";
 
     $("#report-body").innerHTML =
@@ -558,7 +565,7 @@
       (r.notes ? '<div><h3 style="margin:0 0 .3rem;font:700 .78rem/1 var(--sans);' +
         'letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Driver notes</h3>' +
         "<p style=\"margin:0;white-space:pre-wrap\">" + esc(r.notes) + "</p></div>" : "") +
-      (r.photoCount ? '<p class="ad-note" style="padding:0">' + r.photoCount +
+      (Number(r.photoCount) > 0 ? '<p class="ad-note" style="padding:0">' + esc(Number(r.photoCount)) +
         " photo(s) were sent with this report — they arrive as separate image " +
         "attachments alongside the JSON, not inside it.</p>" : "");
 
@@ -937,7 +944,7 @@
 
   /* --------------------------------------------------------------- cloud -- */
 
-  var cloud = { version: 0, syncing: false };
+  var cloud = { version: 0, syncing: false, status: "Last sync: not yet this session." };
 
   var FEATURE_ROWS = [
     { key: "sync",     title: "Books on every device" },
@@ -982,7 +989,7 @@
           '<button class="btn btn--primary btn--sm" id="cl-push">Push to server</button>' +
           '<button class="btn btn--ghost-dark btn--sm" id="cl-out">Sign out</button>' +
         "</div>" +
-        '<p class="sync-line" id="cl-status">Last sync: not yet this session.</p>' +
+        '<p class="sync-line" id="cl-status">' + esc(cloud.status) + "</p>" +
         upgradeGrid(me) +
       "</div>";
 
@@ -1021,6 +1028,12 @@
     }).join("") + "</div>";
   }
 
+  function setSync(msg) {
+    cloud.status = msg;
+    var el = $("#cl-status");
+    if (el) el.textContent = msg;
+  }
+
   function doLogin() {
     var email = $("#cl-email").value.trim(), pass = $("#cl-pass").value;
     if (!email || !pass) { toast("Email and password, please."); return; }
@@ -1038,22 +1051,20 @@
   function pushBook() {
     if (cloud.syncing) return;
     cloud.syncing = true;
-    $("#cl-status").textContent = "Pushing…";
+    setSync("Pushing…");
     WS_API.putBook({
       settings: state.settings, clients: state.clients,
       drivers: state.drivers, invoices: state.invoices
     }, cloud.version).then(function (d) {
       cloud.version = d.version;
-      $("#cl-status").textContent = "Pushed at " + new Date().toLocaleTimeString() +
-        " (version " + d.version + ").";
+      setSync("Pushed at " + new Date().toLocaleTimeString() + " (version " + d.version + ").");
       toast("Book pushed to the server.");
       WS_API.refresh().then(renderCloud);   // a trial go may have just been spent
     }).catch(function (err) {
       if (err.status === 409) {
         cloud.version = err.payload.currentVersion;
-        $("#cl-status").textContent =
-          "Another device wrote first (now at version " + err.payload.currentVersion +
-          "). Pull, check it, then push again.";
+        setSync("Another device wrote first (now at version " + err.payload.currentVersion +
+          "). Pull, check it, then push again.");
         toast("Someone else saved first — pull before pushing.");
       } else if (err.status !== 402) {
         toast("Push failed: " + err.message);
@@ -1064,15 +1075,15 @@
   function pullBook() {
     if (cloud.syncing) return;
     cloud.syncing = true;
-    $("#cl-status").textContent = "Pulling…";
+    setSync("Pulling…");
     WS_API.getBook().then(function (d) {
       if (!d.doc) {
-        $("#cl-status").textContent = "Nothing on the server yet — push to seed it.";
+        setSync("Nothing on the server yet — push to seed it.");
         return;
       }
       if (!confirm("Replace what is in this browser with the server copy?\n\n" +
                    "Server version " + d.version + ", saved by " + (d.updatedBy || "someone") + ".")) {
-        $("#cl-status").textContent = "Pull cancelled.";
+        setSync("Pull cancelled.");
         return;
       }
       state.settings = Object.assign(state.settings, d.doc.settings || {});

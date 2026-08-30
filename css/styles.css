@@ -436,20 +436,34 @@ p:last-child {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 60%;
+  object-position: center 58%;
+  filter: brightness(1.06) saturate(1.06);
 }
 
+/* Scrim is heavy behind the copy on the left, then clears so the truck reads. */
 .hero__media::after {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
       100deg,
-      rgba(14, 20, 32, 0.95) 0%,
-      rgba(14, 20, 32, 0.82) 42%,
-      rgba(14, 20, 32, 0.35) 75%,
-      rgba(14, 20, 32, 0.55) 100%
+      rgba(14, 20, 32, 0.94) 0%,
+      rgba(14, 20, 32, 0.86) 36%,
+      rgba(14, 20, 32, 0.45) 62%,
+      rgba(14, 20, 32, 0.22) 100%
     );
+}
+
+@media (max-width: 900px) {
+  /* Copy sits over the whole width on small screens, so darken evenly. */
+  .hero__media::after {
+    background: linear-gradient(
+      180deg,
+      rgba(14, 20, 32, 0.88) 0%,
+      rgba(14, 20, 32, 0.78) 55%,
+      rgba(14, 20, 32, 0.9) 100%
+    );
+  }
 }
 
 .hero__inner {
@@ -877,6 +891,45 @@ p:last-child {
   color: var(--amber);
   display: block;
   font-size: 0.98rem;
+}
+
+/* ------------------------------------------------------------ gallery -- */
+
+.shot {
+  margin: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--asphalt-3);
+  position: relative;
+}
+
+.shot img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+
+.shot:hover img {
+  transform: scale(1.04);
+}
+
+.shot figcaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1.6rem 1.1rem 0.9rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--white);
+  background: linear-gradient(
+    to top,
+    rgba(14, 20, 32, 0.92) 0%,
+    rgba(14, 20, 32, 0.6) 55%,
+    rgba(14, 20, 32, 0) 100%
+  );
 }
 
 /* --------------------------------------------------------------- CTA -- */

@@ -1,30 +1,28 @@
 # Wells Safety — pilot car & escort services website
 
-Static marketing site for **wellssafety.com**, a veteran-owned pilot car and
-escort vehicle company serving oversize, overweight and superload transport.
+Static marketing site for **wellssafety.com** — Wells Safety LLC, a
+veteran-owned pilot car and escort company based in Martinsville, Indiana,
+running oversize, overweight and superload escorts in all 48 states.
 
 No build step, no framework, no dependencies. Open `index.html` or upload the
 folder to any host.
 
-## ⚠️ Replace before launch
+## ⚠️ Confirm before launch
 
-The site ships with placeholder contact details. Search and replace these
-across all `.html` files:
+Contact details are the real ones read off the trucks — **Wells Safety LLC,
+Martinsville, IN, (765) 684-1909**. Two things still need confirming:
 
-| Placeholder | Appears as | Replace with |
+| Item | Current value | Action |
 | --- | --- | --- |
-| `(555) 555-0142` | Displayed phone number | Real dispatch number |
-| `+15555550142` | `tel:` links | Real number, E.164 format |
-| `+1-555-555-0142` | JSON-LD `telephone` in `index.html` | Real number |
-| `dispatch@wellssafety.com` | Email links and the quote form target | Real dispatch inbox |
+| Dispatch email | `dispatch@wellssafety.com` | Confirm this inbox exists, or swap it |
+| Testimonials | Three quotes on the home page | **Illustrative placeholders** — replace with real client quotes or delete the section |
 
-Also review and confirm before publishing, since these are business claims:
+Also confirm these business claims, since they are stated as fact on the site:
 
-- The stat strip on the home page — `24/7`, `18+ states`, `$1M`, `100%`
-- The state list in `coverage.html` — must match actual certifications
-- Insurance figures in `about.html` and the credentials band
-- The three testimonials on the home page are **illustrative placeholders**.
-  Replace them with real client quotes or delete the section.
+- Stat strip on the home page — `24/7`, `48 states`, `$1M`, `100% clean safety record`
+- `$1,000,000` commercial auto liability, in the credentials band and `about.html`
+- Certification and training claims in `about.html` (flagger, first aid, CPR)
+- Veteran and retired-law-enforcement ownership framing throughout
 
 ## Pages
 
@@ -65,10 +63,15 @@ backend.
 
 ## Imagery
 
-Photography in `assets/` was generated with the Venice image API. To regenerate
-or add images, put your key in `.env` (already gitignored — copy `.env.example`)
-and call the API with it. **Never commit `.env` or paste a key into tracked
-files.**
+All photography in `assets/` is real — Wells Safety's own trucks and loads,
+supplied by the owner. Sources were 2048x1536; they are cropped to the aspect
+ratio each slot needs and saved as WebP at quality 84.
+
+To add more, drop the originals somewhere and re-run the crop script pattern in
+`assets/` — crop to 16:9 for the hero, 3:2 for cards and gallery, and roughly
+2.3:1 for the CTA banner.
+
+There is no longer any AI-generated imagery on the site.
 
 ## Deploying
 

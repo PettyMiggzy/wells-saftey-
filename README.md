@@ -36,7 +36,36 @@ company and it can be added.
 | `services.html` | Lead/chase, height pole, route survey, superload, FAQ |
 | `coverage.html` | All 48 states, certification states, multi-state routes |
 | `about.html` | Ownership story, credentials, equipment list |
+| `faq.html` | Twelve common questions with FAQPage schema |
 | `contact.html` | Quote request form and dispatch details |
+| `404.html` | Not-found page that routes people back |
+
+## SEO
+
+- **Structured data** — one `LocalBusiness`/`ProfessionalService` entity with
+  address, geo, service area, opening hours and an offer catalogue, referenced
+  by `@id` from every other node so search engines see one company rather than
+  six unrelated pages. Plus `Service` nodes per offering, `BreadcrumbList` on
+  inner pages, `FAQPage` on the FAQ, and `WebSite` on the home page. Every block
+  is validated JSON.
+- **Meta** — canonical, robots with `max-image-preview:large`, Open Graph with
+  image dimensions and alt text, Twitter summary cards, and geo tags for
+  Martinsville. Titles 40–52 characters, descriptions 127–158, so neither gets
+  truncated in results.
+- **Content** — the FAQ answers what carriers actually search: when an escort is
+  required, lead versus chase, what it costs, what a height pole does. It
+  deliberately does **not** publish state-by-state legal thresholds — those vary,
+  they change, and a wrong number here becomes somebody's fine or somebody's
+  bridge strike. The permit is named as the authority throughout.
+- **Sitemap** — all six public pages with `lastmod`, `changefreq` and priority.
+  The admin, driver and guide pages are `noindex` and disallowed.
+
+### The biggest remaining opportunity
+
+A state-by-state escort requirements page is what ranks in this industry, and
+it needs Paul's knowledge to be accurate rather than mine. If he supplies the
+thresholds he actually works to, that page is worth building — sourced and
+dated, with a link to each state's permit office.
 
 ## Structure
 

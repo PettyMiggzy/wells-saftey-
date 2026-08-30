@@ -1445,3 +1445,67 @@ details.faq__item > p {
     width: 100%;
   }
 }
+
+/* ----------------------------------------------------------------- FAQ -- */
+
+.wrap--narrow { max-width: 780px; }
+
+.faq-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.faq {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.faq summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 1.15rem 3rem 1.15rem 1.35rem;
+  font: 600 1.05rem/1.4 var(--sans);
+  position: relative;
+}
+
+.faq summary::-webkit-details-marker { display: none; }
+
+/* Plus that becomes a minus, drawn in CSS so there is no icon to load. */
+.faq summary::after,
+.faq summary::before {
+  content: "";
+  position: absolute;
+  right: 1.35rem;
+  top: 50%;
+  width: 14px;
+  height: 2px;
+  background: var(--amber-dark);
+  transition: transform 0.2s ease;
+}
+
+.faq summary::before { transform: translateY(-50%); }
+.faq summary::after { transform: translateY(-50%) rotate(90deg); }
+.faq[open] summary::after { transform: translateY(-50%) rotate(0deg); }
+
+.faq summary:hover { color: var(--amber-dark); }
+
+.faq summary:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+}
+
+.faq__a {
+  padding: 0 1.35rem 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.faq__a p {
+  margin: 1rem 0 0;
+  color: #3c4655;
+  line-height: 1.7;
+}
+
+.faq[open] summary { color: var(--ink); }

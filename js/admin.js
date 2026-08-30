@@ -113,7 +113,7 @@
         bizName: "Wells Safety LLC",
         bizAddress: "Martinsville, IN",
         bizPhone: "(765) 684-1909",
-        bizEmail: "",
+        bizEmail: "paul@wellssafety.com",
         prefix: "WS-",
         nextNumber: 1001,
         termsDays: 30,
@@ -121,6 +121,8 @@
         rates: rates
       },
       clients: [],
+      drivers: [],
+      reports: [],
       invoices: []
     };
   }
@@ -137,6 +139,8 @@
       data.settings = Object.assign(base.settings, data.settings || {});
       data.settings.rates = Object.assign(base.settings.rates, data.settings.rates || {});
       data.clients = data.clients || [];
+      data.drivers = data.drivers || [];
+      data.reports = data.reports || [];
       data.invoices = data.invoices || [];
       return data;
     } catch (e) {
@@ -188,6 +192,33 @@
     });
   }
 
+  var CERTS = [
+    { key: "pevo",     label: "PEVO" },
+    { key: "atssa",    label: "ATSSA flagger" },
+    { key: "witpac",   label: "WITPAC" },
+    { key: "tims",     label: "TIMS" },
+    { key: "medical",  label: "Medical card" },
+    { key: "insurance",label: "Insurance" }
+  ];
+
+  var CERT_WARN_DAYS = 60;
+
+  // Every credential inside the warning window (or already lapsed), worst first.
+  function expiringCerts() {
+    var out = [];
+    state.drivers.forEach(function (d) {
+      if (d.status === "inactive") return;
+      CERTS.forEach(function (c) {
+        var iso = (d.certs || {})[c.key];
+        var due = parseDate(iso);
+        if (!due) return;
+        var left = daysBetween(today(), due);
+        if (left <= CERT_WARN_DAYS) out.push({ driver: d.name, label: c.label, iso: iso, left: left });
+      });
+    });
+    return out.sort(function (a, b) { return a.left - b.left; });
+  }
+
   /* ------------------------------------------------------------- views -- */
 
   function showView(name) {
@@ -199,6 +230,8 @@
     if (name === "dashboard") renderDashboard();
     if (name === "invoices") renderInvoices();
     if (name === "clients") renderClients();
+    if (name === "drivers") renderDrivers();
+    if (name === "reports") renderReports();
     if (name === "settings") renderSettings();
   }
 
@@ -238,9 +271,25 @@
       money(ytd.reduce(function (s, i) { return s + invoiceTotal(i).total; }, 0));
     $("#kpi-ytd-sub").textContent = ytd.length + " invoices in " + year;
 
+    renderCompliance();
     renderAging(open);
     renderDebtors(open);
     renderAttention(open);
+  }
+
+  function renderCompliance() {
+    var rows = expiringCerts();
+    $("#compliance-card").hidden = rows.length === 0;
+    if (!rows.length) return;
+    $("#compliance-body").innerHTML = rows.map(function (r) {
+      var lapsed = r.left < 0;
+      var state_ = lapsed ? "overdue" : (r.left <= 14 ? "unpaid" : "draft");
+      var word = lapsed ? "Expired " + Math.abs(r.left) + "d ago"
+                        : (r.left === 0 ? "Expires today" : r.left + " days left");
+      return "<tr><td>" + esc(r.driver) + "</td><td>" + esc(r.label) + "</td>" +
+        "<td>" + fmtDate(r.iso) + "</td>" +
+        '<td><span class="pill pill--' + state_ + '">' + esc(word) + "</span></td></tr>";
+    }).join("");
   }
 
   var BUCKETS = [
@@ -381,6 +430,183 @@
     $("#cl-empty").hidden = list.length > 0;
   }
 
+
+  /* ----------------------------------------------------------- drivers -- */
+
+  function certSummary(d) {
+    var bits = CERTS.map(function (c) {
+      var iso = (d.certs || {})[c.key];
+      if (!iso) return null;
+      var left = daysBetween(today(), parseDate(iso));
+      var cls = left < 0 ? "overdue" : (left <= CERT_WARN_DAYS ? "unpaid" : "paid");
+      return '<span class="pill pill--' + cls + '" title="' + esc(c.label) + " expires " +
+             esc(fmtDate(iso)) + '">' + esc(c.label) + "</span>";
+    }).filter(Boolean);
+    return bits.length ? '<span class="cert-pills">' + bits.join("") + "</span>"
+                       : '<span class="muted">none recorded</span>';
+  }
+
+  function renderDrivers() {
+    var q = $("#dr-search").value.trim().toLowerCase();
+    var list = state.drivers.filter(function (d) {
+      return !q || (d.name + " " + (d.unit || "")).toLowerCase().indexOf(q) !== -1;
+    });
+    $("#dr-body").innerHTML = list.map(function (d) {
+      return "<tr>" +
+        '<td><button class="ad-row-link" data-driver="' + esc(d.id) + '">' + esc(d.name) + "</button></td>" +
+        "<td>" + (d.phone ? '<a href="tel:' + esc(d.phone.replace(/[^0-9+]/g, "")) + '">' + esc(d.phone) + "</a>" : "") + "</td>" +
+        "<td>" + esc(d.unit || "") + "</td>" +
+        '<td class="wrap-cell">' + certSummary(d) + "</td>" +
+        '<td><span class="pill pill--' + (d.status === "inactive" ? "draft" : "paid") + '">' +
+          (d.status === "inactive" ? "Inactive" : "Active") + "</span></td>" +
+        '<td class="num"><button class="btn btn--dark btn--sm" data-driver="' + esc(d.id) + '">Open</button></td>' +
+        "</tr>";
+    }).join("");
+    $("#dr-empty").hidden = list.length > 0;
+  }
+
+  var editingDriver = null;
+
+  function openDriverEditor(d) {
+    editingDriver = d || { id: uid(), name: "", phone: "", email: "", unit: "",
+                           status: "active", certs: {}, notes: "", isNew: true };
+    $("#driver-title").textContent = editingDriver.isNew ? "New driver" : editingDriver.name;
+    $("#delete-driver").hidden = !!editingDriver.isNew;
+
+    $("#cert-grid").innerHTML = CERTS.map(function (c) {
+      return '<label class="fld"><span>' + esc(c.label) + "</span>" +
+        '<input class="ad-input" type="date" data-cert="' + c.key + '" value="' +
+        esc((editingDriver.certs || {})[c.key] || "") + '"></label>';
+    }).join("");
+
+    $$("#driver-form [name]").forEach(function (el) {
+      el.value = editingDriver[el.name] == null ? "" : editingDriver[el.name];
+    });
+    $("#driver-editor").showModal();
+  }
+
+  function saveDriver() {
+    $$("#driver-form [name]").forEach(function (el) { editingDriver[el.name] = el.value; });
+    editingDriver.certs = editingDriver.certs || {};
+    $$("#cert-grid [data-cert]").forEach(function (el) {
+      editingDriver.certs[el.dataset.cert] = el.value;
+    });
+    if (!editingDriver.name.trim()) { toast("The driver needs a name."); return; }
+    if (editingDriver.isNew) {
+      delete editingDriver.isNew;
+      state.drivers.push(editingDriver);
+    }
+    save();
+    $("#driver-editor").close();
+    toast("Driver saved.");
+    renderDrivers();
+  }
+
+  /* ----------------------------------------------------------- reports -- */
+
+  function renderReports() {
+    var q = $("#rp-search").value.trim().toLowerCase();
+    var list = state.reports.filter(function (r) {
+      return !q || [r.driver, r.customer, r.loadRef, r.origin, r.destination]
+        .filter(Boolean).join(" ").toLowerCase().indexOf(q) !== -1;
+    }).sort(function (a, b) { return String(b.filed).localeCompare(String(a.filed)); });
+
+    $("#rp-body").innerHTML = list.map(function (r) {
+      var lane = [r.origin, r.destination].filter(Boolean).join(" → ");
+      return "<tr>" +
+        "<td>" + fmtDate((r.filed || "").slice(0, 10)) +
+          (r.invoiceId ? ' <span class="pill pill--paid">Invoiced</span>' : "") + "</td>" +
+        "<td>" + esc(r.driver || "") + "</td>" +
+        '<td class="wrap-cell">' + esc(r.loadRef || "") +
+          (r.customer ? '<div class="muted">' + esc(r.customer) + "</div>" : "") + "</td>" +
+        '<td class="wrap-cell">' + esc(lane) + "</td>" +
+        '<td class="num">' + esc(r.miles || "0") + "</td>" +
+        '<td class="wrap-cell muted">' + esc((r.roles || []).join(", ")) + "</td>" +
+        '<td class="num"><button class="btn btn--dark btn--sm" data-report="' + esc(r.id) + '">Open</button></td>' +
+        "</tr>";
+    }).join("");
+    $("#rp-empty").hidden = list.length > 0;
+  }
+
+  var viewingReport = null;
+
+  function openReport(r) {
+    viewingReport = r;
+    $("#report-title").textContent = "Report — " + (r.loadRef || r.driver || r.id);
+    var rows = [
+      ["Driver", r.driver], ["Date of move", fmtDate(r.date)], ["Unit", r.unit],
+      ["Customer", r.customer], ["Load", r.loadRef], ["Permit", r.permit],
+      ["Ran", (r.roles || []).join(", ")],
+      ["Route", [r.origin, r.destination].filter(Boolean).join(" → ")],
+      ["Loaded miles", r.miles], ["Deadhead", r.deadhead],
+      ["Wait (hrs)", r.waitHours], ["Nights out", r.nights],
+      ["Filed", r.filed ? new Date(r.filed).toLocaleString() : ""],
+      ["Photos attached", r.photoCount]
+    ].filter(function (p) { return p[1]; });
+
+    var geo = r.geo
+      ? '<p class="ad-note" style="padding:0">Location stamp: ' +
+        '<a href="https://www.google.com/maps?q=' + r.geo.lat + "," + r.geo.lng +
+        '" target="_blank" rel="noopener">' + r.geo.lat.toFixed(5) + ", " +
+        r.geo.lng.toFixed(5) + "</a> (&plusmn;" + r.geo.accuracy + "m)</p>"
+      : "";
+
+    $("#report-body").innerHTML =
+      '<div class="dv-review"><dl>' + rows.map(function (p) {
+        return "<dt>" + esc(p[0]) + "</dt><dd>" + esc(p[1]) + "</dd>";
+      }).join("") + "</dl></div>" + geo +
+      (r.notes ? '<div><h3 style="margin:0 0 .3rem;font:700 .78rem/1 var(--sans);' +
+        'letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Driver notes</h3>' +
+        "<p style=\"margin:0;white-space:pre-wrap\">" + esc(r.notes) + "</p></div>" : "") +
+      (r.photoCount ? '<p class="ad-note" style="padding:0">' + r.photoCount +
+        " photo(s) were sent with this report — they arrive as separate image " +
+        "attachments alongside the JSON, not inside it.</p>" : "");
+
+    $("#report-to-invoice").disabled = !!r.invoiceId;
+    $("#report-to-invoice").textContent = r.invoiceId
+      ? "Already invoiced" : "Make an invoice from this";
+    $("#report-viewer").showModal();
+  }
+
+  // Turn a filed report into a draft invoice, pricing it off the saved rates.
+  function invoiceFromReport(r) {
+    var rates = state.settings.rates;
+    var items = [];
+    var miles = num(r.miles);
+
+    var ROLE_TO_RATE = {
+      "Lead": "lead", "Chase": "chase", "High pole": "highPole",
+      "Steer": "steer", "Route survey": "survey", "Traffic control": "lead"
+    };
+    (r.roles || []).forEach(function (role) {
+      var key = ROLE_TO_RATE[role];
+      if (key && miles) items.push({ desc: role + " escort", qty: miles, rate: rates[key] });
+    });
+    if (!items.length && miles) items.push({ desc: "Escort", qty: miles, rate: rates.lead });
+    if (num(r.deadhead)) items.push({ desc: "Deadhead miles", qty: num(r.deadhead), rate: rates.deadhead });
+    if (num(r.waitHours)) items.push({ desc: "Wait / detention", qty: num(r.waitHours), rate: rates.wait });
+    if (num(r.nights)) items.push({ desc: "Hotel / per diem", qty: num(r.nights), rate: rates.perDiem });
+
+    // Match the customer by name if we already know them.
+    var match = state.clients.filter(function (c) {
+      return c.name.toLowerCase() === String(r.customer || "").toLowerCase();
+    })[0];
+
+    var inv = newInvoice(match ? match.id : null);
+    inv.loadRef = r.loadRef || "";
+    inv.permit = r.permit || "";
+    inv.origin = r.origin || "";
+    inv.destination = r.destination || "";
+    inv.items = items;
+    inv.notes = r.driver ? "Run by " + r.driver + "." : "";
+    inv.reportId = r.id;
+
+    $("#report-viewer").close();
+    openEditor(inv);
+    toast(match ? "Priced from your saved rates — check it over."
+                : "Priced from your rates. Pick the customer before saving.");
+  }
+
   /* ---------------------------------------------------------- settings -- */
 
   function renderSettings() {
@@ -496,6 +722,10 @@
     if (editing.isNew) {
       delete editing.isNew;
       state.invoices.push(editing);
+      if (editing.reportId) {
+        var src = state.reports.filter(function (r) { return r.id === editing.reportId; })[0];
+        if (src) src.invoiceId = editing.id;
+      }
       // Only burn the next number if this invoice actually used it.
       if (editing.number === nextNumber()) state.settings.nextNumber = num(state.settings.nextNumber) + 1;
     }
@@ -654,6 +884,18 @@
                termsDays: 45, vendorId: "WS-441", notes: "Slow payer — chase at day 40." };
     state.clients.push(c1, c2);
 
+    var iso = function (n) { return isoDate(addDays(today(), n)); };
+    state.drivers.push(
+      { id: uid(), name: "Paul Wells", phone: "(765) 684-1909", email: "paul@wellssafety.com",
+        unit: "W1", status: "active", notes: "Owner. Runs the long ones.",
+        certs: { pevo: iso(410), atssa: iso(38), witpac: iso(520), tims: iso(240),
+                 medical: iso(96), insurance: iso(150) } },
+      { id: uid(), name: "Dell Harmon", phone: "(765) 555-0119", email: "",
+        unit: "W2", status: "active", notes: "High pole certified.",
+        certs: { pevo: iso(-9), atssa: iso(300), witpac: "", tims: iso(180),
+                 medical: iso(19), insurance: iso(150) } }
+    );
+
     var r = state.settings.rates;
     state.invoices.push(
       { id: uid(), number: "WS-1001", clientId: c1.id,
@@ -712,7 +954,7 @@
 
   // Row actions, delegated across every table.
   document.addEventListener("click", function (e) {
-    var t = e.target.closest("[data-open],[data-paid],[data-client],[data-bill]");
+    var t = e.target.closest("[data-open],[data-paid],[data-client],[data-bill],[data-driver],[data-report]");
     if (!t) return;
 
     if (t.dataset.open) {
@@ -731,6 +973,10 @@
       openClientEditor(clientById(t.dataset.client));
     } else if (t.dataset.bill) {
       openEditor(newInvoice(t.dataset.bill));
+    } else if (t.dataset.driver) {
+      openDriverEditor(state.drivers.filter(function (d) { return d.id === t.dataset.driver; })[0]);
+    } else if (t.dataset.report) {
+      openReport(state.reports.filter(function (r) { return r.id === t.dataset.report; })[0]);
     }
   });
 
@@ -810,6 +1056,79 @@
     renderClients();
   });
 
+
+  /* --------------------------------------------------- drivers/reports -- */
+
+  $("#new-driver").addEventListener("click", function () { openDriverEditor(null); });
+  $("#save-driver").addEventListener("click", saveDriver);
+  $("#dr-search").addEventListener("input", renderDrivers);
+  $("#rp-search").addEventListener("input", renderReports);
+
+  $("#delete-driver").addEventListener("click", function () {
+    if (!confirm("Remove " + editingDriver.name + " from the roster?")) return;
+    state.drivers = state.drivers.filter(function (d) { return d.id !== editingDriver.id; });
+    save();
+    $("#driver-editor").close();
+    renderDrivers();
+  });
+
+  $("#copy-driver-link").addEventListener("click", function () {
+    var url = location.href.replace(/admin\.html.*$/, "driver.html");
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(function () {
+        toast("Driver form link copied — text it to your crew with the passcode.");
+      }).catch(function () { prompt("Copy this link:", url); });
+    } else {
+      prompt("Copy this link:", url);
+    }
+  });
+
+  $("#import-report").addEventListener("click", function () { $("#report-file").click(); });
+
+  $("#report-file").addEventListener("change", function (e) {
+    var list = Array.prototype.slice.call(e.target.files || []);
+    var added = 0, skipped = 0, bad = 0;
+    var pending = list.length;
+    if (!pending) return;
+
+    list.forEach(function (file) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        try {
+          var r = JSON.parse(fr.result);
+          if (r.kind !== "wellssafety.jobreport") throw new Error("wrong file");
+          if (state.reports.some(function (x) { return x.id === r.id; })) skipped++;
+          else { state.reports.push(r); added++; }
+        } catch (err) { bad++; }
+        if (--pending === 0) finish();
+      };
+      fr.onerror = function () { bad++; if (--pending === 0) finish(); };
+      fr.readAsText(file);
+    });
+
+    function finish() {
+      save();
+      renderReports();
+      var msg = added + " report" + (added === 1 ? "" : "s") + " imported";
+      if (skipped) msg += ", " + skipped + " already had";
+      if (bad) msg += ", " + bad + " not a job report";
+      toast(msg + ".");
+    }
+    e.target.value = "";
+  });
+
+  $("#report-to-invoice").addEventListener("click", function () {
+    if (viewingReport) invoiceFromReport(viewingReport);
+  });
+
+  $("#delete-report").addEventListener("click", function () {
+    if (!confirm("Delete this report?")) return;
+    state.reports = state.reports.filter(function (r) { return r.id !== viewingReport.id; });
+    save();
+    $("#report-viewer").close();
+    renderReports();
+  });
+
   // Filters
   ["#inv-search", "#inv-status", "#inv-sort"].forEach(function (sel) {
     $(sel).addEventListener("input", renderInvoices);
@@ -818,9 +1137,20 @@
 
   // Settings persist as you type.
   $("#settings-form").addEventListener("input", function (e) {
-    if (!e.target.name) return;
+    if (!e.target.name || e.target.name === "newCode") return;
     state.settings[e.target.name] = e.target.value;
     save();
+  });
+
+  // The passcode is never kept in state — only its hash, held by the gate.
+  $('#settings-form [name="newCode"]').addEventListener("change", function (e) {
+    var code = e.target.value.trim();
+    if (!code) return;
+    if (code.length < 4) { toast("Use at least 4 characters."); return; }
+    WS_AUTH.setCode(code).then(function () {
+      e.target.value = "";
+      toast("Passcode changed on this browser. Tell your drivers the new one.");
+    });
   });
 
   $("#rates-form").addEventListener("input", function (e) {
@@ -882,5 +1212,10 @@
     d.addEventListener("click", function (e) { if (e.target === d) d.close(); });
   });
 
-  showView("dashboard");
+  WS_AUTH.require({
+    title: "Dispatch Book",
+    subtitle: "Enter the passcode to open the books."
+  }).then(function () {
+    showView("dashboard");
+  });
 })();

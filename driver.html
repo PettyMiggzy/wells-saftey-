@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Job Report — Wells Safety</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0e1420">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/driver.css">
+</head>
+<body class="dv">
+
+<header class="dv-head">
+  <div class="dv-head__in">
+    <svg class="dv-head__mark" viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M24 3 6 10v14c0 11 7.6 18.6 18 21 10.4-2.4 18-10 18-21V10L24 3Z" fill="#ffb020"/>
+      <path d="M24 3 6 10v14c0 11 7.6 18.6 18 21V3Z" fill="#e0930a"/>
+      <path d="m14 20 4 12h3l3-9 3 9h3l4-12h-3.5l-2.2 7.6L26 20h-4l-2.3 7.6L17.5 20H14Z" fill="#0e1420"/>
+    </svg>
+    <div>
+      <strong>Job Report</strong>
+      <span id="dv-date"></span>
+    </div>
+    <button class="dv-lock" id="lock" title="Lock">&#9679;</button>
+  </div>
+  <div class="dv-progress"><i id="dv-bar"></i></div>
+</header>
+
+<main class="dv-main" id="main">
+
+  <!-- step 1 ------------------------------------------------------------- -->
+  <section class="dv-step" data-step="1">
+    <p class="dv-eyebrow">Step 1 of 4</p>
+    <h1>Who&rsquo;s running it?</h1>
+
+    <!-- Free text with suggestions: a driver's own phone has no roster saved. -->
+    <label class="fld"><span>Driver</span>
+      <input class="ad-input" id="f-driver" list="driver-list" placeholder="Your name" autocomplete="name">
+      <datalist id="driver-list"></datalist>
+    </label>
+
+    <div class="ad-grid">
+      <label class="fld"><span>Date of move</span><input class="ad-input" id="f-date" type="date"></label>
+      <label class="fld"><span>Truck / unit</span><input class="ad-input" id="f-unit" placeholder="W1"></label>
+    </div>
+
+    <label class="fld"><span>Customer / broker</span><input class="ad-input" id="f-customer" placeholder="Who hired the escort"></label>
+
+    <div class="ad-grid">
+      <label class="fld"><span>Load / order #</span><input class="ad-input" id="f-loadRef"></label>
+      <label class="fld"><span>Permit #</span><input class="ad-input" id="f-permit"></label>
+    </div>
+  </section>
+
+  <!-- step 2 ------------------------------------------------------------- -->
+  <section class="dv-step" data-step="2" hidden>
+    <p class="dv-eyebrow">Step 2 of 4</p>
+    <h1>The run</h1>
+
+    <div class="dv-role">
+      <span class="fld__label">What did you run?</span>
+      <div class="dv-chips" id="f-roles"></div>
+    </div>
+
+    <div class="ad-grid">
+      <label class="fld"><span>Origin</span><input class="ad-input" id="f-origin" placeholder="City, ST"></label>
+      <label class="fld"><span>Destination</span><input class="ad-input" id="f-destination" placeholder="City, ST"></label>
+    </div>
+
+    <div class="ad-grid">
+      <label class="fld"><span>Loaded miles</span><input class="ad-input" id="f-miles" type="number" inputmode="decimal" step="0.1" min="0"></label>
+      <label class="fld"><span>Deadhead miles</span><input class="ad-input" id="f-deadhead" type="number" inputmode="decimal" step="0.1" min="0"></label>
+    </div>
+
+    <div class="ad-grid">
+      <label class="fld"><span>Wait / detention (hrs)</span><input class="ad-input" id="f-wait" type="number" inputmode="decimal" step="0.25" min="0"></label>
+      <label class="fld"><span>Nights out</span><input class="ad-input" id="f-nights" type="number" inputmode="numeric" step="1" min="0"></label>
+    </div>
+
+    <div class="dv-gps">
+      <button type="button" class="btn btn--dark btn--sm" id="geo-btn">Stamp my location</button>
+      <p class="dv-gps__out" id="geo-out">Optional. Adds where you were when you filed this.</p>
+    </div>
+  </section>
+
+  <!-- step 3 ------------------------------------------------------------- -->
+  <section class="dv-step" data-step="3" hidden>
+    <p class="dv-eyebrow">Step 3 of 4</p>
+    <h1>Proof</h1>
+    <p class="dv-lede">
+      Photos of the load, the permit, the pole, damage, receipts &mdash; whatever
+      backs up the run. They get shrunk so they actually send.
+    </p>
+
+    <label class="dv-shoot">
+      <input type="file" id="f-photos" accept="image/*" capture="environment" multiple hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <path d="M3 8a2 2 0 0 1 2-2h2.2l1.3-2h6.9l1.3 2H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8Z"/>
+        <circle cx="12" cy="12.5" r="3.5"/>
+      </svg>
+      <strong>Take or choose photos</strong>
+      <span>Tap to open the camera</span>
+    </label>
+
+    <div class="dv-shots" id="shots"></div>
+
+    <label class="fld"><span>Anything worth noting</span>
+      <textarea class="ad-input" id="f-notes" rows="4" placeholder="Reroutes, low bridges, delays at the shipper, damage, anything the office should know."></textarea>
+    </label>
+  </section>
+
+  <!-- step 4 ------------------------------------------------------------- -->
+  <section class="dv-step" data-step="4" hidden>
+    <p class="dv-eyebrow">Step 4 of 4</p>
+    <h1>Send it in</h1>
+
+    <div class="dv-review" id="review"></div>
+
+    <div class="dv-send">
+      <button type="button" class="btn btn--primary" id="send-share">Send to dispatch</button>
+      <button type="button" class="btn btn--dark btn--sm" id="send-download">Save to my phone instead</button>
+    </div>
+    <p class="dv-note" id="send-note">
+      Opens your phone&rsquo;s share sheet with the report and photos attached &mdash;
+      send it by text or email, whichever you use.
+    </p>
+  </section>
+</main>
+
+<nav class="dv-nav">
+  <button class="btn btn--ghost-dark btn--sm" id="back" hidden>Back</button>
+  <span class="ad-toolbar__spacer"></span>
+  <button class="btn btn--primary btn--sm" id="next">Next</button>
+</nav>
+
+<div class="ad-toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="js/auth.js" defer></script>
+<script src="js/driver.js" defer></script>
+</body>
+</html>

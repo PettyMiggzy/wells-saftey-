@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/styles.css">
 <link rel="stylesheet" href="css/admin.css">
+<link rel="stylesheet" href="css/driver.css">
 </head>
 <body class="ad">
 
@@ -31,6 +32,8 @@
       <button class="ad-tab" data-view="dashboard" aria-current="page">Dashboard</button>
       <button class="ad-tab" data-view="invoices">Invoices</button>
       <button class="ad-tab" data-view="clients">Clients</button>
+      <button class="ad-tab" data-view="drivers">Drivers</button>
+      <button class="ad-tab" data-view="reports">Reports</button>
       <button class="ad-tab" data-view="settings">Settings</button>
     </nav>
 
@@ -92,6 +95,19 @@
             <tr><th>Customer</th><th class="num">Open</th><th class="num">Oldest</th></tr>
           </thead>
           <tbody id="debtors-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="ad-card" id="compliance-card" hidden>
+      <div class="ad-card__head">
+        <h2>Certifications expiring</h2>
+        <p>A lapsed card parks a driver. Renew before these run out.</p>
+      </div>
+      <div class="ad-tablewrap">
+        <table class="ad-table">
+          <thead><tr><th>Driver</th><th>Credential</th><th>Expires</th><th>Status</th></tr></thead>
+          <tbody id="compliance-body"></tbody>
         </table>
       </div>
     </div>
@@ -176,6 +192,64 @@
     </div>
   </section>
 
+
+  <!-- ======================================================= drivers === -->
+  <section class="ad-view" id="view-drivers" hidden>
+    <div class="ad-toolbar">
+      <input type="search" id="dr-search" class="ad-input" placeholder="Search drivers…" aria-label="Search drivers">
+      <span class="ad-toolbar__spacer"></span>
+      <button class="btn btn--dark btn--sm" id="copy-driver-link">Copy driver form link</button>
+      <button class="btn btn--primary btn--sm" id="new-driver">+ Add Driver</button>
+    </div>
+
+    <div class="ad-card">
+      <div class="ad-tablewrap">
+        <table class="ad-table">
+          <thead>
+            <tr><th>Driver</th><th>Phone</th><th>Unit</th><th>Credentials</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody id="dr-body"></tbody>
+        </table>
+      </div>
+      <p class="ad-empty" id="dr-empty" hidden>
+        No drivers yet. Add your crew here to track their PEVO, ATSSA, WITPAC and TIMS
+        cards and see what is about to expire.
+      </p>
+    </div>
+  </section>
+
+  <!-- ======================================================= reports === -->
+  <section class="ad-view" id="view-reports" hidden>
+    <div class="ad-toolbar">
+      <input type="search" id="rp-search" class="ad-input" placeholder="Search reports…" aria-label="Search reports">
+      <span class="ad-toolbar__spacer"></span>
+      <button class="btn btn--primary btn--sm" id="import-report">Import a report</button>
+      <input type="file" id="report-file" accept="application/json" multiple hidden>
+    </div>
+
+    <div class="ad-card">
+      <div class="ad-card__head">
+        <h2>Filed by drivers</h2>
+        <p>
+          Drivers file from <code>driver.html</code> on their phone and send you the
+          JSON. Import it here, then turn it straight into an invoice.
+        </p>
+      </div>
+      <div class="ad-tablewrap">
+        <table class="ad-table">
+          <thead>
+            <tr><th>Filed</th><th>Driver</th><th>Load</th><th>Route</th>
+                <th class="num">Miles</th><th>Ran</th><th></th></tr>
+          </thead>
+          <tbody id="rp-body"></tbody>
+        </table>
+      </div>
+      <p class="ad-empty" id="rp-empty" hidden>
+        Nothing filed yet. Send your drivers the form link from the Drivers tab.
+      </p>
+    </div>
+  </section>
+
   <!-- ====================================================== settings === -->
   <section class="ad-view" id="view-settings" hidden>
     <div class="ad-cols">
@@ -192,6 +266,7 @@
           <label class="fld"><span>Invoice prefix</span><input class="ad-input" name="prefix" placeholder="WS-"></label>
           <label class="fld"><span>Next invoice number</span><input class="ad-input" name="nextNumber" type="number" min="1" step="1"></label>
           <label class="fld"><span>Default terms (days)</span><input class="ad-input" name="termsDays" type="number" min="0" step="1"></label>
+          <label class="fld"><span>Passcode</span><input class="ad-input" name="newCode" type="password" placeholder="Change the passcode" autocomplete="new-password"></label>
           <label class="fld fld--wide"><span>Payment instructions</span><textarea class="ad-input" name="remit" rows="3" placeholder="Make checks payable to… / Zelle / ACH details"></textarea></label>
         </div>
       </div>
@@ -344,11 +419,70 @@
   </form>
 </dialog>
 
+
+<!-- =================================================== driver editor === -->
+<dialog class="ad-dialog ad-dialog--narrow" id="driver-editor">
+  <form method="dialog" class="ad-dialog__form" id="driver-form">
+    <header class="ad-dialog__head">
+      <h2 id="driver-title">New driver</h2>
+      <button class="ad-x" value="cancel" aria-label="Close">&times;</button>
+    </header>
+    <div class="ad-dialog__body">
+      <label class="fld"><span>Name</span><input class="ad-input" name="name" required></label>
+      <div class="ad-grid">
+        <label class="fld"><span>Phone</span><input class="ad-input" name="phone"></label>
+        <label class="fld"><span>Email</span><input class="ad-input" name="email" type="email"></label>
+      </div>
+      <div class="ad-grid">
+        <label class="fld"><span>Truck / unit</span><input class="ad-input" name="unit" placeholder="W1"></label>
+        <label class="fld"><span>Status</span>
+          <select class="ad-input" name="status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </label>
+      </div>
+
+      <fieldset class="ad-fieldset">
+        <legend>Credentials &mdash; expiry dates</legend>
+        <p class="ad-note" style="padding:0;margin:0">Leave blank if it does not apply. Anything inside 60 days shows on the dashboard.</p>
+        <div class="ad-grid" id="cert-grid"></div>
+      </fieldset>
+
+      <label class="fld"><span>Notes</span><textarea class="ad-input" name="notes" rows="2" placeholder="States certified, endorsements, who to call."></textarea></label>
+    </div>
+    <footer class="ad-dialog__foot">
+      <button class="btn btn--ghost-dark btn--sm" value="cancel" type="submit" formnovalidate>Cancel</button>
+      <span class="ad-toolbar__spacer"></span>
+      <button class="btn btn--danger btn--sm" type="button" id="delete-driver">Delete</button>
+      <button class="btn btn--primary btn--sm" type="button" id="save-driver">Save driver</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- =================================================== report viewer === -->
+<dialog class="ad-dialog" id="report-viewer">
+  <form method="dialog" class="ad-dialog__form">
+    <header class="ad-dialog__head">
+      <h2 id="report-title">Job report</h2>
+      <button class="ad-x" value="cancel" aria-label="Close">&times;</button>
+    </header>
+    <div class="ad-dialog__body" id="report-body"></div>
+    <footer class="ad-dialog__foot">
+      <button class="btn btn--ghost-dark btn--sm" value="cancel" type="submit">Close</button>
+      <span class="ad-toolbar__spacer"></span>
+      <button class="btn btn--danger btn--sm" type="button" id="delete-report">Delete</button>
+      <button class="btn btn--primary btn--sm" type="button" id="report-to-invoice">Make an invoice from this</button>
+    </footer>
+  </form>
+</dialog>
+
 <!-- ================================================== printable sheet === -->
 <div id="print-sheet" aria-hidden="true"></div>
 
 <div class="ad-toast" id="toast" role="status" aria-live="polite" hidden></div>
 
+<script src="js/auth.js" defer></script>
 <script src="js/admin.js" defer></script>
 </body>
 </html>

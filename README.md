@@ -21,7 +21,7 @@ Confirmed by the owner and reflected throughout the site:
 
 | Item | Current value | Action |
 | --- | --- | --- |
-| Dispatch email | **removed** | `wellssafety.com` is not paid up, so the mailbox cannot receive mail. Give a working address to wire the quote form to |
+| Dispatch email | `paul@wellssafety.com` | Added as requested and wired to the quote form — **but `wellssafety.com` is not paid up, so it cannot receive mail yet.** It starts working the moment the domain is live. |
 | Insurance limits | Stated as "commercial auto and general liability", no figure | Add the real limits if you want them shown |
 
 Fabricated client testimonials were removed rather than left on a live business
@@ -119,6 +119,53 @@ If he outgrows this — needs it on multiple devices, or wants a real login — 
 next step is a hosted database behind Vercel, which needs an account and a small
 amount of backend work. The data model is a straight JSON document, so it ports
 over cleanly.
+
+## Crew tools
+
+Both private pages sit behind a shared passcode (default **104Paul**, changeable
+in Settings → Passcode).
+
+### Drivers
+
+The **Drivers** tab is a roster with credential expiry tracking — PEVO, ATSSA
+flagger, WITPAC, TIMS, medical card and insurance. Anything inside 60 days, or
+already lapsed, is pushed to the top of the dashboard, worst first. A lapsed
+card parks a driver, so this is the part worth keeping current.
+
+### Driver job reports — `driver.html`
+
+A four-step, thumb-sized form drivers fill out on their phone: who ran it, the
+run (roles, route, miles, deadhead, wait, nights), photo proof straight from the
+camera, then review and send. It stamps GPS coordinates on request.
+
+**How it gets to the office.** A driver's phone shares no storage with the
+office, and there is no server in between. So "Send to dispatch" opens the
+phone's own share sheet with the report (JSON) and photos attached — the driver
+texts or emails it. Photos are resized to 1400px and re-encoded, which takes a
+4MB camera shot down to roughly 100KB so it actually sends.
+
+On the office end, **Reports → Import a report** reads the JSON back in.
+Re-importing the same report is detected and skipped.
+
+### Report → invoice
+
+Open an imported report and hit **Make an invoice from this**. It prices the run
+off your saved rates — each role billed against the loaded miles, plus deadhead,
+wait time and per diem — and matches the customer by name if you already have
+them. Verified: a 150-mile lead + high pole run with 40 deadhead, 2 hours wait
+and 1 night came out at $1,082.50 without a keystroke.
+
+### What the passcode actually does
+
+It is a **client-side** check: the page holds a SHA-256 hash and compares what
+you type against it. That keeps the passcode out of the source and keeps the
+tools away from anyone who stumbles onto the URL.
+
+It is **not authentication.** Anyone who reads the page source can lift the hash,
+or skip the gate entirely in developer tools. What genuinely limits the exposure
+is that the data never leaves the browser it was entered in — there is no server
+holding it for someone to reach. Treat the gate as a lock on a filing cabinet,
+not a bank vault. Real accounts need a backend.
 
 ## Domain
 

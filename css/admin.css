@@ -254,6 +254,14 @@
 .pill--overdue { background: #fde8e8; color: #a32020; }
 .pill--draft   { background: #eceff3; color: var(--muted); }
 
+.cert-pills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.cert-pills .pill { font-size: 0.66rem; padding: 0.16rem 0.45rem; }
+
 /* ------------------------------------------------------------- toolbar -- */
 
 .ad-toolbar {

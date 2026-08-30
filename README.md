@@ -32,9 +32,9 @@ company and it can be added.
 
 | File | Purpose |
 | --- | --- |
-| `index.html` | Home — hero, credentials, services, why us, process, testimonials |
+| `index.html` | Home — hero, credentials, services, why us, process, certifications, gallery |
 | `services.html` | Lead/chase, height pole, route survey, superload, FAQ |
-| `coverage.html` | Certified states, reciprocity, multi-state routes |
+| `coverage.html` | All 48 states, certification states, multi-state routes |
 | `about.html` | Ownership story, credentials, equipment list |
 | `contact.html` | Quote request form and dispatch details |
 
@@ -43,7 +43,10 @@ company and it can be added.
 ```
 css/styles.css      design system + all layout
 css/fonts.css       @font-face for the self-hosted fonts
-js/main.js          mobile nav, form validation, mailto handoff
+js/main.js          mobile nav, form validation, quote handoff
+admin.html          private invoice ledger (unlinked, noindex)
+css/admin.css       admin styling + the print stylesheet for invoices
+js/admin.js         invoice/customer store, totals, aging, export
 assets/             imagery, favicon, fonts
 ```
 
@@ -54,13 +57,15 @@ identically offline.
 ## The quote form
 
 `contact.html` has no backend. On submit, `js/main.js` validates the fields and
-then opens the visitor's email client with the request pre-filled, addressed to
-the `data-email` attribute on the form.
+then hands the request off based on the form's `data-email` attribute:
 
-That works on any static host, but it depends on the visitor having a mail
-client configured. To take submissions server-side instead, point the form at a
-form service (Formspree, Netlify Forms, Basin) or your own endpoint, and drop
-the `mailto` branch at the end of `js/main.js`.
+- **Set** — opens the visitor's email client with the request pre-filled
+- **Empty** (current state, since the domain mailbox is dead) — copies the
+  request to the clipboard and tells the visitor to call or text dispatch
+
+To take submissions server-side instead, point the form at a form service
+(Formspree, Netlify Forms, Basin) or your own endpoint and replace the handoff
+at the end of `js/main.js`.
 
 A honeypot field (`.hp`) catches naive spam bots. Keep it if you swap the
 backend.
@@ -76,6 +81,44 @@ To add more, drop the originals somewhere and re-run the crop script pattern in
 2.3:1 for the CTA banner.
 
 There is no longer any AI-generated imagery on the site.
+
+## Dispatch Book (private admin)
+
+`admin.html` is an invoice ledger for running the business — open balances,
+overdue chasing, and printable invoices. It is **not linked from the public
+site**, is `noindex`, and is disallowed in `robots.txt`. Bookmark the URL:
+
+    https://wells-saftey.vercel.app/admin.html
+
+What it does:
+
+- **Dashboard** — outstanding, overdue, paid in the last 30 days, billed YTD;
+  an aging table (not due / 1-30 / 31-60 / 61-90 / 90+) and who owes the most
+- **Invoices** — search and filter by status, mark paid in one click, CSV export
+- **Customers** — brokers and carriers with payment terms; per-customer open and
+  billed totals; "Invoice" button prefills a new invoice on their terms
+- **Print / PDF** — a clean invoice with your details, the load and permit
+  reference, line items, totals and a PAID stamp. Print to PDF and email it.
+- **Rates** — per-mile defaults for lead, chase, high pole, steer, survey,
+  deadhead and fuel, plus day rate, wait time and per diem. Quick-add buttons on
+  an invoice pull from these; override any line per job.
+
+### Where the data lives — read this
+
+Everything is stored in **that one browser only** (`localStorage`). Nothing is
+uploaded, so there is no login and no server to leak — but it also means:
+
+- Clearing browsing data **erases it**
+- It does not sync between his phone and his laptop
+- Two devices keep two separate books
+
+So **download a backup regularly** (Settings → Download backup) and keep it in
+Drive or email it to himself. Restore reads that same file back.
+
+If he outgrows this — needs it on multiple devices, or wants a real login — the
+next step is a hosted database behind Vercel, which needs an account and a small
+amount of backend work. The data model is a straight JSON document, so it ports
+over cleanly.
 
 ## Domain
 

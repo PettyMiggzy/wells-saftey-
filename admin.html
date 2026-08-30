@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dispatch Book — Wells Safety</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0e1420">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="ad">
+
+<header class="ad-top">
+  <div class="ad-top__bar">
+    <a class="logo" href="index.html" title="Back to the public site">
+      <svg class="logo__mark" viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M24 3 6 10v14c0 11 7.6 18.6 18 21 10.4-2.4 18-10 18-21V10L24 3Z" fill="#ffb020"/>
+        <path d="M24 3 6 10v14c0 11 7.6 18.6 18 21V3Z" fill="#e0930a"/>
+        <path d="m14 20 4 12h3l3-9 3 9h3l4-12h-3.5l-2.2 7.6L26 20h-4l-2.3 7.6L17.5 20H14Z" fill="#0e1420"/>
+      </svg>
+      <span class="logo__text">
+        <span class="logo__name">Wells<span>Safety</span></span>
+        <span class="logo__tag">Dispatch Book</span>
+      </span>
+    </a>
+
+    <nav class="ad-tabs" aria-label="Sections">
+      <button class="ad-tab" data-view="dashboard" aria-current="page">Dashboard</button>
+      <button class="ad-tab" data-view="invoices">Invoices</button>
+      <button class="ad-tab" data-view="clients">Clients</button>
+      <button class="ad-tab" data-view="settings">Settings</button>
+    </nav>
+
+    <div class="ad-top__actions">
+      <button class="btn btn--primary btn--sm" id="new-invoice">+ New Invoice</button>
+    </div>
+  </div>
+</header>
+
+<main class="ad-main" id="main">
+
+  <!-- ===================================================== dashboard === -->
+  <section class="ad-view" id="view-dashboard">
+
+    <div class="ad-kpis">
+      <div class="kpi">
+        <span class="kpi__label">Outstanding</span>
+        <strong class="kpi__num" id="kpi-outstanding">$0</strong>
+        <span class="kpi__sub" id="kpi-outstanding-sub">0 open invoices</span>
+      </div>
+      <div class="kpi kpi--danger">
+        <span class="kpi__label">Overdue</span>
+        <strong class="kpi__num" id="kpi-overdue">$0</strong>
+        <span class="kpi__sub" id="kpi-overdue-sub">Nothing past due</span>
+      </div>
+      <div class="kpi kpi--ok">
+        <span class="kpi__label">Paid — last 30 days</span>
+        <strong class="kpi__num" id="kpi-paid30">$0</strong>
+        <span class="kpi__sub" id="kpi-paid30-sub">0 payments</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi__label">Billed this year</span>
+        <strong class="kpi__num" id="kpi-ytd">$0</strong>
+        <span class="kpi__sub" id="kpi-ytd-sub">Excludes drafts</span>
+      </div>
+    </div>
+
+    <div class="ad-cols">
+      <div class="ad-card">
+        <div class="ad-card__head">
+          <h2>Aging</h2>
+          <p>How long the money has been sitting out there.</p>
+        </div>
+        <table class="ad-table ad-table--aging">
+          <thead>
+            <tr><th>Bucket</th><th class="num">Invoices</th><th class="num">Amount</th></tr>
+          </thead>
+          <tbody id="aging-body"></tbody>
+        </table>
+      </div>
+
+      <div class="ad-card">
+        <div class="ad-card__head">
+          <h2>Who owes you</h2>
+          <p>Open balances by customer, biggest first.</p>
+        </div>
+        <table class="ad-table">
+          <thead>
+            <tr><th>Customer</th><th class="num">Open</th><th class="num">Oldest</th></tr>
+          </thead>
+          <tbody id="debtors-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="ad-card">
+      <div class="ad-card__head">
+        <h2>Needs attention</h2>
+        <p>Overdue first, then due soonest.</p>
+      </div>
+      <div class="ad-tablewrap">
+        <table class="ad-table">
+          <thead>
+            <tr>
+              <th>Invoice</th><th>Customer</th><th>Load</th>
+              <th>Due</th><th class="num">Amount</th><th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="attention-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================================================== invoices === -->
+  <section class="ad-view" id="view-invoices" hidden>
+    <div class="ad-toolbar">
+      <input type="search" id="inv-search" class="ad-input" placeholder="Search invoice #, customer, load ref, city…" aria-label="Search invoices">
+      <select id="inv-status" class="ad-input" aria-label="Filter by status">
+        <option value="">All statuses</option>
+        <option value="unpaid">Unpaid</option>
+        <option value="overdue">Overdue</option>
+        <option value="paid">Paid</option>
+        <option value="draft">Draft</option>
+      </select>
+      <select id="inv-sort" class="ad-input" aria-label="Sort invoices">
+        <option value="due">Due date</option>
+        <option value="issued">Issue date</option>
+        <option value="amount">Amount</option>
+        <option value="customer">Customer</option>
+      </select>
+      <span class="ad-toolbar__spacer"></span>
+      <button class="btn btn--dark btn--sm" id="export-csv">Export CSV</button>
+    </div>
+
+    <div class="ad-card">
+      <div class="ad-tablewrap">
+        <table class="ad-table">
+          <thead>
+            <tr>
+              <th>Invoice</th><th>Customer</th><th>Load</th><th>Issued</th>
+              <th>Due</th><th class="num">Amount</th><th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="inv-body"></tbody>
+        </table>
+      </div>
+      <p class="ad-empty" id="inv-empty" hidden>No invoices match. Try clearing the filters, or start a new one.</p>
+    </div>
+  </section>
+
+  <!-- ======================================================= clients === -->
+  <section class="ad-view" id="view-clients" hidden>
+    <div class="ad-toolbar">
+      <input type="search" id="cl-search" class="ad-input" placeholder="Search customers…" aria-label="Search customers">
+      <span class="ad-toolbar__spacer"></span>
+      <button class="btn btn--primary btn--sm" id="new-client">+ New Customer</button>
+    </div>
+
+    <div class="ad-card">
+      <div class="ad-tablewrap">
+        <table class="ad-table">
+          <thead>
+            <tr>
+              <th>Customer</th><th>Contact</th><th>Phone</th>
+              <th class="num">Terms</th><th class="num">Open</th><th class="num">Billed</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="cl-body"></tbody>
+        </table>
+      </div>
+      <p class="ad-empty" id="cl-empty" hidden>No customers yet. Add the brokers and carriers you run for so you are not retyping them on every invoice.</p>
+    </div>
+  </section>
+
+  <!-- ====================================================== settings === -->
+  <section class="ad-view" id="view-settings" hidden>
+    <div class="ad-cols">
+      <div class="ad-card">
+        <div class="ad-card__head">
+          <h2>Your business</h2>
+          <p>Prints at the top of every invoice.</p>
+        </div>
+        <div class="ad-form" id="settings-form">
+          <label class="fld"><span>Business name</span><input class="ad-input" name="bizName"></label>
+          <label class="fld"><span>Address</span><textarea class="ad-input" name="bizAddress" rows="2"></textarea></label>
+          <label class="fld"><span>Phone</span><input class="ad-input" name="bizPhone"></label>
+          <label class="fld"><span>Email</span><input class="ad-input" name="bizEmail" type="email"></label>
+          <label class="fld"><span>Invoice prefix</span><input class="ad-input" name="prefix" placeholder="WS-"></label>
+          <label class="fld"><span>Next invoice number</span><input class="ad-input" name="nextNumber" type="number" min="1" step="1"></label>
+          <label class="fld"><span>Default terms (days)</span><input class="ad-input" name="termsDays" type="number" min="0" step="1"></label>
+          <label class="fld fld--wide"><span>Payment instructions</span><textarea class="ad-input" name="remit" rows="3" placeholder="Make checks payable to… / Zelle / ACH details"></textarea></label>
+        </div>
+      </div>
+
+      <div class="ad-card">
+        <div class="ad-card__head">
+          <h2>Default rates</h2>
+          <p>Used by the quick-add buttons on an invoice. Override per job anytime.</p>
+        </div>
+        <div class="ad-form ad-form--rates" id="rates-form"></div>
+      </div>
+    </div>
+
+    <div class="ad-card">
+      <div class="ad-card__head">
+        <h2>Your data</h2>
+        <p>
+          Everything lives in this browser only — nothing is uploaded anywhere.
+          That keeps it private, but it also means clearing your browser data
+          wipes it. <strong>Download a backup regularly.</strong>
+        </p>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn--primary btn--sm" id="backup">Download backup</button>
+        <button class="btn btn--dark btn--sm" id="restore">Restore from backup</button>
+        <button class="btn btn--ghost-dark btn--sm" id="seed">Load sample data</button>
+        <button class="btn btn--danger btn--sm" id="wipe">Erase everything</button>
+      </div>
+      <p class="ad-note" id="backup-note"></p>
+      <input type="file" id="restore-file" accept="application/json" hidden>
+    </div>
+  </section>
+</main>
+
+<!-- ================================================== invoice editor === -->
+<dialog class="ad-dialog" id="editor">
+  <form method="dialog" class="ad-dialog__form" id="editor-form">
+    <header class="ad-dialog__head">
+      <h2 id="editor-title">New invoice</h2>
+      <button class="ad-x" value="cancel" aria-label="Close">&times;</button>
+    </header>
+
+    <div class="ad-dialog__body">
+      <div class="ad-grid">
+        <label class="fld"><span>Invoice #</span><input class="ad-input" name="number" required></label>
+        <label class="fld"><span>Customer</span>
+          <select class="ad-input" name="clientId" required></select>
+        </label>
+        <label class="fld"><span>Issued</span><input class="ad-input" name="issued" type="date" required></label>
+        <label class="fld"><span>Due</span><input class="ad-input" name="due" type="date" required></label>
+      </div>
+
+      <fieldset class="ad-fieldset">
+        <legend>The load</legend>
+        <div class="ad-grid">
+          <label class="fld"><span>Load / order ref</span><input class="ad-input" name="loadRef" placeholder="Broker's load number"></label>
+          <label class="fld"><span>Permit #</span><input class="ad-input" name="permit"></label>
+          <label class="fld"><span>Origin</span><input class="ad-input" name="origin" placeholder="City, ST"></label>
+          <label class="fld"><span>Destination</span><input class="ad-input" name="destination" placeholder="City, ST"></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="ad-fieldset">
+        <legend>Charges</legend>
+        <div class="ad-quickadd" id="quickadd"></div>
+        <div class="ad-tablewrap">
+          <table class="ad-table ad-table--items">
+            <thead>
+              <tr><th>Description</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount</th><th></th></tr>
+            </thead>
+            <tbody id="items-body"></tbody>
+          </table>
+        </div>
+        <button type="button" class="btn btn--dark btn--sm" id="add-item">+ Add line</button>
+
+        <div class="ad-totals">
+          <div><span>Subtotal</span><strong id="t-subtotal">$0.00</strong></div>
+          <div class="ad-totals__row">
+            <label class="fld fld--inline"><span>Adjustment</span>
+              <input class="ad-input ad-input--sm" name="adjustment" type="number" step="0.01" placeholder="0.00">
+            </label>
+            <input class="ad-input ad-input--sm" name="adjustmentNote" placeholder="Reason (discount, detention…)">
+          </div>
+          <div class="ad-totals__grand"><span>Total</span><strong id="t-total">$0.00</strong></div>
+        </div>
+      </fieldset>
+
+      <label class="fld"><span>Notes on the invoice</span><textarea class="ad-input" name="notes" rows="2"></textarea></label>
+
+      <fieldset class="ad-fieldset" id="payment-fs">
+        <legend>Payment</legend>
+        <div class="ad-grid">
+          <label class="fld"><span>Status</span>
+            <select class="ad-input" name="status">
+              <option value="draft">Draft</option>
+              <option value="unpaid">Sent / unpaid</option>
+              <option value="paid">Paid</option>
+            </select>
+          </label>
+          <label class="fld"><span>Paid on</span><input class="ad-input" name="paidDate" type="date"></label>
+          <label class="fld"><span>Method</span>
+            <select class="ad-input" name="paidMethod">
+              <option value="">—</option>
+              <option>Check</option><option>ACH</option><option>Zelle</option>
+              <option>Card</option><option>Cash</option><option>Factoring</option>
+            </select>
+          </label>
+          <label class="fld"><span>Reference</span><input class="ad-input" name="paidRef" placeholder="Check # / confirmation"></label>
+        </div>
+      </fieldset>
+    </div>
+
+    <footer class="ad-dialog__foot">
+      <button class="btn btn--ghost-dark btn--sm" value="cancel" type="submit" formnovalidate>Cancel</button>
+      <span class="ad-toolbar__spacer"></span>
+      <button class="btn btn--dark btn--sm" type="button" id="print-invoice">Print / PDF</button>
+      <button class="btn btn--danger btn--sm" type="button" id="delete-invoice">Delete</button>
+      <button class="btn btn--primary btn--sm" type="button" id="save-invoice">Save invoice</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- =================================================== client editor === -->
+<dialog class="ad-dialog ad-dialog--narrow" id="client-editor">
+  <form method="dialog" class="ad-dialog__form" id="client-form">
+    <header class="ad-dialog__head">
+      <h2 id="client-title">New customer</h2>
+      <button class="ad-x" value="cancel" aria-label="Close">&times;</button>
+    </header>
+    <div class="ad-dialog__body">
+      <label class="fld"><span>Company</span><input class="ad-input" name="name" required></label>
+      <label class="fld"><span>Contact name</span><input class="ad-input" name="contact"></label>
+      <div class="ad-grid">
+        <label class="fld"><span>Phone</span><input class="ad-input" name="phone"></label>
+        <label class="fld"><span>Email</span><input class="ad-input" name="email" type="email"></label>
+      </div>
+      <label class="fld"><span>Billing address</span><textarea class="ad-input" name="address" rows="3"></textarea></label>
+      <div class="ad-grid">
+        <label class="fld"><span>Terms (days)</span><input class="ad-input" name="termsDays" type="number" min="0" step="1"></label>
+        <label class="fld"><span>Their ref for you</span><input class="ad-input" name="vendorId" placeholder="Vendor ID"></label>
+      </div>
+      <label class="fld"><span>Notes</span><textarea class="ad-input" name="notes" rows="2" placeholder="Who to chase, how they pay, quirks…"></textarea></label>
+    </div>
+    <footer class="ad-dialog__foot">
+      <button class="btn btn--ghost-dark btn--sm" value="cancel" type="submit" formnovalidate>Cancel</button>
+      <span class="ad-toolbar__spacer"></span>
+      <button class="btn btn--danger btn--sm" type="button" id="delete-client">Delete</button>
+      <button class="btn btn--primary btn--sm" type="button" id="save-client">Save customer</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- ================================================== printable sheet === -->
+<div id="print-sheet" aria-hidden="true"></div>
+
+<div class="ad-toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="js/admin.js" defer></script>
+</body>
+</html>

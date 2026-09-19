@@ -3,41 +3,72 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Page Not Found — Wells Safety</title>
-<meta name="robots" content="noindex, follow">
+<title>Site Temporarily Offline</title>
+<meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0e1420">
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="css/fonts.css">
-<link rel="stylesheet" href="css/styles.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    background: radial-gradient(120% 90% at 50% 0%, #1b2436 0%, #0e1420 62%);
+    color: #fff;
+    font: 400 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+    text-align: center;
+  }
+  .card { width: min(560px, 100%); }
+  .mark { width: 60px; height: 60px; margin: 0 auto 1.75rem; display: block; }
+  h1 {
+    margin: 0 0 1rem;
+    font-size: clamp(1.9rem, 5vw, 2.6rem);
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    font-weight: 700;
+  }
+  .lede { margin: 0 0 2rem; color: #96a1b2; font-size: 1.05rem; }
+  .notice {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-left: 3px solid #ffb020;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1.1rem 1.35rem;
+    text-align: left;
+    font-size: 0.97rem;
+    color: #c6cedb;
+  }
+  .notice strong { color: #fff; display: block; margin-bottom: 0.3rem; }
+  .foot { margin-top: 2rem; font-size: 0.88rem; color: #6d7889; }
+  .foot a { color: #ffb020; text-decoration: none; }
+  .foot a:hover { text-decoration: underline; }
+</style>
 </head>
 <body>
-<main id="main">
-  <section class="section section--dark" style="min-height:70vh;display:grid;place-items:center;text-align:center">
-    <div class="wrap wrap--narrow">
-      <svg width="64" height="64" viewBox="0 0 48 48" aria-hidden="true" style="margin:0 auto 1.5rem">
-        <path d="M24 3 6 10v14c0 11 7.6 18.6 18 21 10.4-2.4 18-10 18-21V10L24 3Z" fill="#ffb020"/>
-        <path d="M24 3 6 10v14c0 11 7.6 18.6 18 21V3Z" fill="#e0930a"/>
-        <path d="m14 20 4 12h3l3-9 3 9h3l4-12h-3.5l-2.2 7.6L26 20h-4l-2.3 7.6L17.5 20H14Z" fill="#0e1420"/>
-      </svg>
-      <p class="eyebrow">Wrong Turn</p>
-      <h1>That page isn&rsquo;t on the route</h1>
-      <p class="lede" style="margin-inline:auto">
-        The link is broken or the page moved. Dispatch is still answering either
-        way &mdash; call and we&rsquo;ll sort it out faster than you can find it.
-      </p>
-      <div class="btn-row" style="justify-content:center">
-        <a class="btn btn--primary" href="index.html">Back to Home</a>
-        <a class="btn btn--ghost" href="tel:+17656841909">Call (765) 684-1909</a>
-      </div>
-      <p style="margin-top:2.5rem">
-        <a href="services.html" style="color:#96a1b2">Services</a> &middot;
-        <a href="coverage.html" style="color:#96a1b2">Coverage</a> &middot;
-        <a href="faq.html" style="color:#96a1b2">FAQ</a> &middot;
-        <a href="about.html" style="color:#96a1b2">About</a> &middot;
-        <a href="contact.html" style="color:#96a1b2">Contact</a>
-      </p>
+  <main class="card">
+    <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+      <circle cx="24" cy="24" r="21" fill="none" stroke="#ffb020" stroke-width="2.5" opacity=".35"/>
+      <path d="M24 13v13" stroke="#ffb020" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="24" cy="33" r="2.25" fill="#ffb020"/>
+    </svg>
+
+    <h1>Site Temporarily Offline</h1>
+
+    <p class="lede">This website has been suspended and is not currently available.</p>
+
+    <div class="notice">
+      <strong>Pending hosting payment</strong>
+      Service will be restored as soon as the outstanding hosting balance is
+      settled. If you are the site owner, please get in touch to bring it back
+      online.
     </div>
-  </section>
-</main>
+
+    <p class="foot">
+      Hosting and development by
+      <a href="https://www.simplicitybuilds.com/" target="_blank" rel="noopener">Simplicity Builds</a>
+    </p>
+  </main>
 </body>
 </html>
